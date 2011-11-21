@@ -10,12 +10,14 @@ namespace RecommenderSystem
         //Class members here (e.g. a dataset)
         private Dictionary<string, User> usersToItems;
         private Dictionary<string, Item> itemsToUsers;
+        private Dictionary<string, double> usersW;
 
         public RecommenderSystem()
         {
             
             usersToItems = new Dictionary<string, User>();
             itemsToUsers = new Dictionary<string, Item>();
+            usersW = new Dictionary<string, double>();
         }
 
         //load a dataset from a file
@@ -62,6 +64,7 @@ namespace RecommenderSystem
         
             }
             file.Close();
+            this.calculateAvgRatings();
         }
         //return an existing rating 
         public double GetRating(string sUID, string sIID)
@@ -87,18 +90,11 @@ namespace RecommenderSystem
         //predict the rating that a user will give to an item using one of the methods "Pearson", "Cosine", "Random"
         public double PredictRating(string sMethod, string sUID, string sIID)
         {
-            foreach(KeyValuePair<string, User> userEntry in usersToItems){
-                if (userEntry.Value.getAverageRating() != -1) continue;
-                double mone = 0.0;
-                int counter = 0;
-                Dictionary<double, int> hist = GetRatingsHistogram(userEntry.Key);
-                foreach (KeyValuePair<double, int> histEntry in hist) {
-                    mone += histEntry.Key * histEntry.Value;
-                    counter += histEntry.Value;                    
-                }
-                userEntry.Value.setAverageRating((mone/counter));
+            double res = -1;
+            if (sMethod.Equals("Pearson")) {
+                res = pearson(sUID, sIID);
             }
-            return -1.0;
+            return res;
         }
         //return the predicted weights of all ratings that a user may give an item using one of the methods "Pearson", "Cosine", "Random"
         public Dictionary<double, double> PredictAllRatings(string sMethod, string sUID, string sIID)
@@ -109,6 +105,56 @@ namespace RecommenderSystem
         public Dictionary<string,double> ComputeHitRatio(List<string> lMethods, double dTrainSetSize)
         {
             throw new NotImplementedException();
+        }
+        private double pearson(string sUID, string sII)
+        {
+            double numerator = 0;
+            double denomanator1 = 0;
+            double denomanator2 = 0;
+            //Pearson here
+            //calculate w's
+            //<itemID, Rating>
+            Dictionary<string, Rating> userItems = usersToItems[sUID].getDictionary();
+
+            foreach (KeyValuePair<string, Rating> itemEntry in userItems)
+            {
+                //rating of a for this item
+                Rating ratingA = userItems[itemEntry.Key];
+
+                //itemEntry is a specific item of user sUID and we want to know which other
+                //users rated this item
+                //<userID, Rating>
+                Dictionary<string, Rating> usersOfItem = itemsToUsers[itemEntry.Key].getDictionary();
+
+                foreach (KeyValuePair<string, Rating> ratingEntry in usersOfItem)
+                {
+                    if (ratingEntry.Key.Equals(sUID)) continue;
+
+                    double tmpNumerator1 = (ratingA.rating - usersToItems[sUID].getAverageRating());
+                    double tmpNumerator2 = (ratingEntry.Value.rating - usersToItems[ratingEntry.Key].getAverageRating());
+                    numerator += tmpNumerator1 * tmpNumerator2;
+                    denomanator1 += Math.Pow(tmpNumerator1, 2);
+                    denomanator2 += Math.Pow(tmpNumerator2, 2);
+                }    
+            }
+
+            return (numerator / (Math.Sqrt(denomanator1)*Math.Sqrt(denomanator2)));
+        }
+        private void calculateAvgRatings() 
+        {
+            foreach (KeyValuePair<string, User> userEntry in usersToItems)
+            {
+                if (userEntry.Value.getAverageRating() != -1) continue;
+                double mone = 0.0;
+                int counter = 0;
+                Dictionary<double, int> hist = GetRatingsHistogram(userEntry.Key);
+                foreach (KeyValuePair<double, int> histEntry in hist)
+                {
+                    mone += histEntry.Key * histEntry.Value;
+                    counter += histEntry.Value;
+                }
+                userEntry.Value.setAverageRating((mone / counter));
+            }
         }
     }
 }

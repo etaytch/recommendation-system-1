@@ -14,6 +14,8 @@ namespace RecommenderSystem
             RecommenderSystem rs = new RecommenderSystem();
             rs.Load("MovieLens/u.data");
             Console.WriteLine("True rating of user 6 to item 86 is " + rs.GetRating("6", "86"));
+            Console.WriteLine(rs.PredictRating("Pearson", "100", "345"));
+            /*
             Dictionary<double, int> dAllRatings = rs.GetRatingsHistogram("100");
             foreach (KeyValuePair<double, int> p in dAllRatings)
                 Console.WriteLine(p.Key + "," + p.Value);
@@ -33,6 +35,7 @@ namespace RecommenderSystem
                 Console.Write(p.Key + "=" + Math.Round(p.Value,4) + ", ");
             Console.WriteLine();
             Console.ReadLine();
+             * */
         }
     }
 }
