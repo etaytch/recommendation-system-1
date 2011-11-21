@@ -43,7 +43,12 @@ namespace RecommenderSystem
             Dictionary<double, int> hist = new Dictionary<double, int>();
             User user = usersRatings[sUID];
             foreach (KeyValuePair<string, UserRating> entry in user.getDictionary()) {
-                hist[entry.Value.rating]++;
+                if (hist.ContainsKey(entry.Value.rating)) {
+                    hist[entry.Value.rating]++;
+                }
+                else {
+                    hist[entry.Value.rating]=1;
+                }
             }
             return hist;
         }
