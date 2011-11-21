@@ -7,16 +7,16 @@ namespace RecommenderSystem
 {
     class UserRating
     {
-        private int _rating;
+        private double _rating;
         private string _timestamp;
 
-        public UserRating(int rating, string timestamp)
+        public UserRating(double rating, string timestamp)
         {
             this._rating = rating;
             this._timestamp = timestamp;
         }
 
-        public int rating
+        public double rating
         {
             get
             {
