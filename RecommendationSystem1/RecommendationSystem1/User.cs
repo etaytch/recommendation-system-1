@@ -8,10 +8,21 @@ namespace RecommenderSystem
     class User
     {
         private Dictionary<string, Rating> ratings;
+        private double averageRating;
 
         public User()
         {
             ratings = new Dictionary<string, Rating>();
+            averageRating = -1.0;
+        }
+
+
+        public void setAverageRating(double rating) {
+            this.averageRating = rating;
+        }
+
+        public double getAverageRating() {
+            return this.averageRating;
         }
 
         public void addRating(Rating r)
