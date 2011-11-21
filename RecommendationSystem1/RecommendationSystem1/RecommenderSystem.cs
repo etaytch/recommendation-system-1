@@ -14,6 +14,7 @@ namespace RecommenderSystem
         public RecommenderSystem()
         {
             usersToItems = new Dictionary<string, User>();
+            itemsToUsers = new Dictionary<string, Item>();
         }
 
         //load a dataset from a file
@@ -27,18 +28,35 @@ namespace RecommenderSystem
             while ((line = file.ReadLine()) != null)
             {
                 string[] words = line.Split('	');
+                Rating r = new Rating(words[0], words[1], Convert.ToInt32(words[2]), words[3]);
+
                 User u;
-                //User ur = new User(words[0], words[1], Convert.ToInt32(words[2]), words[3]);
                 if (usersToItems.ContainsKey(words[0])) // True
                 {
+                    //User exists
                     u = usersToItems[words[0]];
-                    u.addRating(words[1], Convert.ToDouble(words[2]), words[3]);               
+                    u.addRating(r);               
                 } else
                 {
                     //Create new user rating object
                     u = new User();
-                    u.addRating(words[1], Convert.ToDouble(words[2]), words[3]);
+                    u.addRating(r);
                     usersToItems[words[0]] = u;
+                }
+
+                Item i;
+                if (itemsToUsers.ContainsKey(words[1])) // True
+                {
+                    //Item exists
+                    i = itemsToUsers[words[1]];
+                    i.addRating(r);
+                }
+                else
+                {
+                    //Create new user rating object
+                    i = new Item();
+                    i.addRating(r);
+                    itemsToUsers[words[1]] = i;
                 }
         
             }

@@ -14,10 +14,9 @@ namespace RecommenderSystem
             ratings = new Dictionary<string, Rating>();
         }
 
-        public void addRating(string itemID, double rating, string timestamp)
+        public void addRating(Rating r)
         {
-            Rating ur = new Rating(rating, timestamp);
-            ratings[itemID] = ur;
+            ratings[r.itemID] = r;
         }
 
         public Rating getRating(string itemID)
