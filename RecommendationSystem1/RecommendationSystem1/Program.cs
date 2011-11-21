@@ -10,7 +10,7 @@ namespace RecommenderSystem
     {
 
         static void Main(string[] args)
-        {
+        {            
             RecommenderSystem rs = new RecommenderSystem();
             rs.Load("MovieLens/u.data");
             Console.WriteLine("True rating of user 6 to item 86 is " + rs.GetRating("6", "86"));
