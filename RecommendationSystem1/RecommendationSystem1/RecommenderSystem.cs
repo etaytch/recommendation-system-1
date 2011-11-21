@@ -31,12 +31,12 @@ namespace RecommenderSystem
                 if (usersRatings.ContainsKey(words[0])) // True
                 {
                     u = usersRatings[words[0]];
-                    u.addRating(words[1], Convert.ToInt32(words[2]), words[3]);               
+                    u.addRating(words[1], Convert.ToDouble(words[2]), words[3]);               
                 } else
                 {
                     //Create new user rating object
                     u = new User();
-                    u.addRating(words[1], Convert.ToInt32(words[2]), words[3]);
+                    u.addRating(words[1], Convert.ToDouble(words[2]), words[3]);
                     usersRatings[words[0]] = u;
                 }
         
@@ -46,7 +46,8 @@ namespace RecommenderSystem
         //return an existing rating 
         public double GetRating(string sUID, string sIID)
         {
-            throw new NotImplementedException();
+            User u = usersRatings[sUID];
+            return u.getRating(sIID).rating;
         }
         //return an histogram of all ratings that the user has used
         public Dictionary<double, int> GetRatingsHistogram(string sUID)
