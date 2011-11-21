@@ -40,7 +40,12 @@ namespace RecommenderSystem
         //return an histogram of all ratings that the user has used
         public Dictionary<double, int> GetRatingsHistogram(string sUID)
         {
-            throw new NotImplementedException();
+            Dictionary<double, int> hist = new Dictionary<double, int>();
+            User user = usersRatings[sUID];
+            foreach (KeyValuePair<string, UserRating> entry in user.getDictionary()) {
+                hist[entry.Value.rating]++;
+            }
+            return hist;
         }
         //predict the rating that a user will give to an item using one of the methods "Pearson", "Cosine", "Random"
         public double PredictRating(string sMethod, string sUID, string sIID)
