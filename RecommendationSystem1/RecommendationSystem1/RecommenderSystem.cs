@@ -8,6 +8,7 @@ namespace RecommenderSystem
     class RecommenderSystem
     {
         //Class members here (e.g. a dataset)
+        private List<UserRating> usersRatings;
 
         public RecommenderSystem()
         {
