@@ -26,10 +26,21 @@ namespace RecommenderSystem
             while ((line = file.ReadLine()) != null)
             {
                 string[] words = line.Split('	');
+                User u;
                 //User ur = new User(words[0], words[1], Convert.ToInt32(words[2]), words[3]);
-                //usersRatings.Add(ur);
+                if (usersRatings.ContainsKey(words[0])) // True
+                {
+                    u = usersRatings[words[0]];
+                    u.addRating(words[1], Convert.ToInt32(words[2]), words[3]);               
+                } else
+                {
+                    //Create new user rating object
+                    u = new User();
+                    u.addRating(words[1], Convert.ToInt32(words[2]), words[3]);
+                    usersRatings[words[0]] = u;
+                }
+        
             }
-
             file.Close();
         }
         //return an existing rating 
