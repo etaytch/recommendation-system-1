@@ -16,7 +16,7 @@ namespace RecommenderSystem
 
         public void addRating(Rating r)
         {
-            ratings[r.itemID] = r;
+            ratings[r.userID] = r;
         }
 
         public Rating getRating(string itemID)
