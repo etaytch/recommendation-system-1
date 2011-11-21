@@ -24,5 +24,9 @@ namespace RecommenderSystem
         {
             return ratings[itemID];
         }
+
+        public Dictionary<string, UserRating> getDictionary() {
+            return ratings;
+        }
     }
 }
