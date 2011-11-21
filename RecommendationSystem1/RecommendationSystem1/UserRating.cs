@@ -13,6 +13,19 @@ namespace RecommenderSystem
         private int _rating;
         private string _timestamp;
 
+        public UserRating()
+        {
+
+        }
+
+        public UserRating(string _userID, string _itemID, int _rating, string _timestamp)
+        {
+            this._userID = _userID;
+            this._itemID = _itemID;
+            this._rating = _rating;
+            this._timestamp = _timestamp;
+        }
+
         public string userID
         {
             get
