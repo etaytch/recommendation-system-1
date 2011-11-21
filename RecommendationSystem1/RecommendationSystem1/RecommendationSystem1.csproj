@@ -45,6 +45,34 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="RecommenderSystem.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ml-100k\allbut.pl" />
+    <None Include="ml-100k\mku.sh" />
+    <None Include="ml-100k\README" />
+    <None Include="ml-100k\u.data" />
+    <None Include="ml-100k\u.genre" />
+    <None Include="ml-100k\u.info" />
+    <None Include="ml-100k\u.item" />
+    <None Include="ml-100k\u.occupation" />
+    <None Include="ml-100k\u1.base" />
+    <None Include="ml-100k\u1.test" />
+    <None Include="ml-100k\u2.base" />
+    <None Include="ml-100k\u2.test" />
+    <None Include="ml-100k\u3.base" />
+    <None Include="ml-100k\u3.test" />
+    <None Include="ml-100k\u4.base" />
+    <None Include="ml-100k\u4.test" />
+    <None Include="ml-100k\u5.base" />
+    <None Include="ml-100k\u5.test" />
+    <None Include="ml-100k\ua.base" />
+    <None Include="ml-100k\ua.test" />
+    <None Include="ml-100k\ub.base" />
+    <None Include="ml-100k\ub.test" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="ml-100k\u.user" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
