@@ -87,7 +87,18 @@ namespace RecommenderSystem
         //predict the rating that a user will give to an item using one of the methods "Pearson", "Cosine", "Random"
         public double PredictRating(string sMethod, string sUID, string sIID)
         {
-            throw new NotImplementedException();
+            foreach(KeyValuePair<string, User> userEntry in usersToItems){
+                if (userEntry.Value.getAverageRating() != -1) continue;
+                double mone = 0.0;
+                int counter = 0;
+                Dictionary<double, int> hist = GetRatingsHistogram(userEntry.Key);
+                foreach (KeyValuePair<double, int> histEntry in hist) {
+                    mone += histEntry.Key * histEntry.Value;
+                    counter += histEntry.Value;                    
+                }
+                userEntry.Value.setAverageRating((mone/counter));
+            }
+            return -1.0;
         }
         //return the predicted weights of all ratings that a user may give an item using one of the methods "Pearson", "Cosine", "Random"
         public Dictionary<double, double> PredictAllRatings(string sMethod, string sUID, string sIID)
