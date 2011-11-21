@@ -5,11 +5,11 @@ using System.Text;
 
 namespace RecommenderSystem
 {
-    class User
+    class Item
     {
         private Dictionary<string, Rating> ratings;
 
-        public User()
+        public Item()
         {
             ratings = new Dictionary<string, Rating>();
         }
