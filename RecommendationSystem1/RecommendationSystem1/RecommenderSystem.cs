@@ -8,11 +8,11 @@ namespace RecommenderSystem
     class RecommenderSystem
     {
         //Class members here (e.g. a dataset)
-        private List<UserRating> usersRatings;
+        private Dictionary<string, User> usersRatings;
 
         public RecommenderSystem()
         {
-            usersRatings = new List<UserRating>();
+            usersRatings = new Dictionary<string, User>();
         }
 
         //load a dataset from a file
@@ -26,8 +26,8 @@ namespace RecommenderSystem
             while ((line = file.ReadLine()) != null)
             {
                 string[] words = line.Split('	');
-                UserRating ur = new UserRating(words[0], words[1], Convert.ToInt32(words[2]), words[3]);
-                usersRatings.Add(ur);
+                //User ur = new User(words[0], words[1], Convert.ToInt32(words[2]), words[3]);
+                //usersRatings.Add(ur);
             }
 
             file.Close();
