@@ -8,28 +8,8 @@ namespace RecommenderSystem
 {
     class Program
     {
-        static void Main(string[] args) {
-            string[] lines = System.IO.File.ReadAllLines(@"ml-100k\u.data");
-             
 
-            // Display the file contents by using a foreach loop.
-            System.Console.WriteLine("Contents of WriteLines2.txt = ");
-            foreach (string line in lines) {
-                // Use a tab to indent each line of the file.
-                string[] words = line.Split('	');
-                foreach (string word in words) {
-                    Console.WriteLine(word);
-                }
-                Console.WriteLine("words's size: "+words.Length+"\nwords: " + words[0]);
-                System.Console.ReadKey();
-            }
-
-            // Keep the console window open in debug mode.
-            Console.WriteLine("Press any key to exit.");
-            
-        }
-
-        static void Main1(string[] args)
+        static void Main(string[] args)
         {
             RecommenderSystem rs = new RecommenderSystem();
             rs.Load("MovieLens/u.data");
