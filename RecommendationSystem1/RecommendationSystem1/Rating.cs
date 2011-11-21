@@ -14,6 +14,7 @@ namespace RecommenderSystem
 
         public Rating(string userID, string itemID, double rating, string timestamp)
         {
+            
             this._userID = userID;
             this._itemID = itemID;
             this._rating = rating;

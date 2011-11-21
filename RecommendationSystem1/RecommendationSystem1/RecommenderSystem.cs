@@ -13,6 +13,7 @@ namespace RecommenderSystem
 
         public RecommenderSystem()
         {
+            
             usersToItems = new Dictionary<string, User>();
             itemsToUsers = new Dictionary<string, Item>();
         }
