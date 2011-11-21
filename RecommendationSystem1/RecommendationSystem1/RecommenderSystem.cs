@@ -12,12 +12,25 @@ namespace RecommenderSystem
 
         public RecommenderSystem()
         {
+            usersRatings = new List<UserRating>();
         }
 
         //load a dataset from a file
         public void Load(string sFileName)
         {
-            throw new NotImplementedException();
+            string line;
+
+            // Read the file and display it line by line.
+            System.IO.StreamReader file =
+               new System.IO.StreamReader("ml-100k\\u.data");
+            while ((line = file.ReadLine()) != null)
+            {
+                string[] words = line.Split('	');
+                UserRating ur = new UserRating(words[0], words[1], Convert.ToInt32(words[2]), words[3]);
+                usersRatings.Add(ur);
+            }
+
+            file.Close();
         }
         //return an existing rating 
         public double GetRating(string sUID, string sIID)
