@@ -8,11 +8,12 @@ namespace RecommenderSystem
     class RecommenderSystem
     {
         //Class members here (e.g. a dataset)
-        private Dictionary<string, User> usersRatings;
+        private Dictionary<string, User> usersToItems;
+        private Dictionary<string, Item> itemsToUsers;
 
         public RecommenderSystem()
         {
-            usersRatings = new Dictionary<string, User>();
+            usersToItems = new Dictionary<string, User>();
         }
 
         //load a dataset from a file
@@ -28,16 +29,16 @@ namespace RecommenderSystem
                 string[] words = line.Split('	');
                 User u;
                 //User ur = new User(words[0], words[1], Convert.ToInt32(words[2]), words[3]);
-                if (usersRatings.ContainsKey(words[0])) // True
+                if (usersToItems.ContainsKey(words[0])) // True
                 {
-                    u = usersRatings[words[0]];
+                    u = usersToItems[words[0]];
                     u.addRating(words[1], Convert.ToDouble(words[2]), words[3]);               
                 } else
                 {
                     //Create new user rating object
                     u = new User();
                     u.addRating(words[1], Convert.ToDouble(words[2]), words[3]);
-                    usersRatings[words[0]] = u;
+                    usersToItems[words[0]] = u;
                 }
         
             }
@@ -46,15 +47,15 @@ namespace RecommenderSystem
         //return an existing rating 
         public double GetRating(string sUID, string sIID)
         {
-            User u = usersRatings[sUID];
+            User u = usersToItems[sUID];
             return u.getRating(sIID).rating;
         }
         //return an histogram of all ratings that the user has used
         public Dictionary<double, int> GetRatingsHistogram(string sUID)
         {
             Dictionary<double, int> hist = new Dictionary<double, int>();
-            User user = usersRatings[sUID];
-            foreach (KeyValuePair<string, UserRating> entry in user.getDictionary()) {
+            User user = usersToItems[sUID];
+            foreach (KeyValuePair<string, Rating> entry in user.getDictionary()) {
                 if (hist.ContainsKey(entry.Value.rating)) {
                     hist[entry.Value.rating]++;
                 }
