@@ -10,15 +10,19 @@ namespace RecommenderSystem
         //Class members here (e.g. a dataset)
         private Dictionary<string, User> usersToItems;
         private Dictionary<string, Item> itemsToUsers;
-        private Dictionary<string, double> usersW;
+        private Dictionary<string, double> usersWPearson;
+        private Dictionary<string, double> usersWCosine;
+        private List<string> usersIDs;
 
         public RecommenderSystem()
         {
             
             usersToItems = new Dictionary<string, User>();
             itemsToUsers = new Dictionary<string, Item>();
-            usersW = new Dictionary<string, double>();
-        }
+            usersWPearson = new Dictionary<string, double>();
+            usersWCosine = new Dictionary<string, double>();
+            usersIDs = new List<string>();
+       }
 
         //load a dataset from a file
         public void Load(string sFileName)
@@ -45,6 +49,7 @@ namespace RecommenderSystem
                     u = new User();
                     u.addRating(r);
                     usersToItems[words[0]] = u;
+                    usersIDs.Add(words[0]);
                 }
 
                 Item i;
@@ -94,6 +99,9 @@ namespace RecommenderSystem
             if (sMethod.Equals("Pearson")) {
                 res = pearson(sUID, sIID);
             }
+            else if (sMethod.Equals("Cosine")) {
+                res = cosine(sUID, sIID);
+            }
             return res;
         }
         //return the predicted weights of all ratings that a user may give an item using one of the methods "Pearson", "Cosine", "Random"
@@ -105,8 +113,171 @@ namespace RecommenderSystem
         public Dictionary<string,double> ComputeHitRatio(List<string> lMethods, double dTrainSetSize)
         {
             throw new NotImplementedException();
+        }               
+
+        private double getPearsonWeight(string activeUID, string otherUID) {
+            if (usersWPearson.ContainsKey(activeUID + "," + otherUID)) {
+                return usersWPearson[activeUID + "," + otherUID];
+            }
+            if (usersWPearson.ContainsKey(otherUID + "," + activeUID)) {
+                return usersWPearson[otherUID + "," + activeUID];
+            }
+            else return calcPearsonWeight(activeUID, otherUID);
         }
-        private double pearson(string sUID, string sII)
+
+        private double calcPearsonWeight(string activeUID, string otherUID) {
+            
+            Dictionary<string, Rating> activeItems = usersToItems[activeUID].getDictionary();
+            Dictionary<string, Rating> otherItems = usersToItems[otherUID].getDictionary();
+            double activeAverageRating = usersToItems[activeUID].getAverageRating();
+            double otherAverageRating = usersToItems[otherUID].getAverageRating();
+
+            double numerator = 0.0;
+            double denomanator1 = 0.0;
+            double denomanator2 = 0.0;
+            double tmpNumerator1 = 0.0;
+            double tmpNumerator2 = 0.0;
+
+            foreach (KeyValuePair<string, Rating> activeItemEntry in activeItems) {
+                String itemID = activeItemEntry.Key;                                
+                if (otherItems.ContainsKey(itemID)) {
+                    double Rai = activeItems[itemID].rating;
+                    double Rui = otherItems[itemID].rating;
+                    tmpNumerator1 = (Rai - activeAverageRating);
+                    tmpNumerator2 = (Rui - otherAverageRating);
+                    numerator += tmpNumerator1 * tmpNumerator2;
+                    denomanator1 += Math.Pow(tmpNumerator1, 2);
+                    denomanator2 += Math.Pow(tmpNumerator2, 2);
+                }
+            }
+            double wau;
+            if ((denomanator1 == 0.0) || (denomanator2 == 0.0)) {
+                wau = 0.0;
+            }
+            else {
+                wau = (numerator / (Math.Sqrt(denomanator1) * Math.Sqrt(denomanator2)));
+            }
+            usersWPearson[activeUID + "," + otherUID] = wau;
+            usersWPearson[otherUID + "," + activeUID] = wau;
+            return wau;
+        }
+
+        private double pearson(string sUID, string sII) {
+            double ans=0.0;
+            double numerator = 0.0;
+            double denomanator = 0.0;
+            Dictionary<string, Rating> currentItemUsers = itemsToUsers[sII].getDictionary();
+            foreach (KeyValuePair<string, Rating> userEntry in currentItemUsers) {
+                if (sUID.Equals(userEntry.Key)) continue;
+                double Wau = getPearsonWeight(sUID, userEntry.Key);
+                numerator += Wau * currentItemUsers[userEntry.Key].rating;
+                denomanator += Wau;
+            }
+
+            if (denomanator==0.0) {
+                return 0.0;
+            }
+            return numerator / denomanator;        
+        }
+
+        private double cosine(string sUID, string sII) {
+            double ans = 0.0;
+            double numerator = 0.0;
+            double denomanator = 0.0;
+            Dictionary<string, Rating> currentItemUsers = itemsToUsers[sII].getDictionary();
+            foreach (KeyValuePair<string, Rating> userEntry in currentItemUsers) {
+                if (sUID.Equals(userEntry.Key)) continue;
+                double Wau = getCosineWeight(sUID, userEntry.Key);
+                numerator += Wau * currentItemUsers[userEntry.Key].rating;
+                denomanator += Wau;
+            }
+
+            if (denomanator == 0.0) {
+                return 0.0;
+            }
+            return numerator / denomanator;
+        }
+
+        private double getCosineWeight(string activeUID, string otherUID) {
+            if (usersWCosine.ContainsKey(activeUID + "," + otherUID)) {
+                return usersWCosine[activeUID + "," + otherUID];
+            }
+            if (usersWCosine.ContainsKey(otherUID + "," + activeUID)) {
+                return usersWCosine[otherUID + "," + activeUID];
+            }
+            else return calcCosineWeight(activeUID, otherUID);
+        }
+
+        private double calcCosineWeight(string activeUID, string otherUID) {
+            Dictionary<string, Rating> activeItems = usersToItems[activeUID].getDictionary();
+            Dictionary<string, Rating> otherItems = usersToItems[otherUID].getDictionary();
+            double activeAverageRating = usersToItems[activeUID].getAverageRating();
+            double otherAverageRating = usersToItems[otherUID].getAverageRating();
+
+            double numerator = 0.0;
+            double denomanator1 = 0.0;
+            double denomanator2 = 0.0;
+            double tmpNumerator1 = 0.0;
+            double tmpNumerator2 = 0.0;
+
+            foreach (KeyValuePair<string, Rating> activeItemEntry in activeItems) {
+                String itemID = activeItemEntry.Key;
+                double Rai = activeItems[itemID].rating;
+                tmpNumerator1 = (Rai - activeAverageRating);
+                double Rui=0.0;
+                if (otherItems.ContainsKey(itemID)) {                    
+                    Rui = otherItems[itemID].rating;                    
+                }
+                tmpNumerator2 = (Rui - otherAverageRating);
+                numerator += tmpNumerator1 * tmpNumerator2;
+                denomanator1 += Math.Pow(tmpNumerator1, 2);
+                denomanator2 += Math.Pow(tmpNumerator2, 2);                
+            }
+
+            foreach (KeyValuePair<string, Rating> otherItemEntry in otherItems) {
+                String itemID = otherItemEntry.Key;
+                if (!activeItems.ContainsKey(itemID)) {
+                    double Rai = 0.0;
+                    tmpNumerator1 = (Rai - activeAverageRating);
+                    double Rui = otherItems[itemID].rating;                    
+                    tmpNumerator2 = (Rui - otherAverageRating);
+                    numerator += tmpNumerator1 * tmpNumerator2;
+                    denomanator1 += Math.Pow(tmpNumerator1, 2);
+                    denomanator2 += Math.Pow(tmpNumerator2, 2);                
+                }                
+            }
+
+            double wau;
+            if ((denomanator1 == 0.0) || (denomanator2 == 0.0)) {
+                wau = 0.0;
+            }
+            else {
+                wau = (numerator / (Math.Sqrt(denomanator1) * Math.Sqrt(denomanator2)));
+            }
+            usersWCosine[activeUID + "," + otherUID] = wau;
+            usersWCosine[otherUID + "," + activeUID] = wau;
+            return wau;
+        }
+
+        private void calculateAvgRatings() 
+        {
+            foreach (KeyValuePair<string, User> userEntry in usersToItems)
+            {
+                if (userEntry.Value.getAverageRating() != -1) continue;
+                double mone = 0.0;
+                int counter = 0;
+                Dictionary<double, int> hist = GetRatingsHistogram(userEntry.Key);
+                foreach (KeyValuePair<double, int> histEntry in hist)
+                {
+                    mone += histEntry.Key * histEntry.Value;
+                    counter += histEntry.Value;
+                }
+                userEntry.Value.setAverageRating((mone / counter));
+            }
+        }
+
+        /*
+         private double pearson(string sUID, string sII)
         {
             double numerator = 0;
             double denomanator1 = 0;
@@ -140,21 +311,8 @@ namespace RecommenderSystem
 
             return (numerator / (Math.Sqrt(denomanator1)*Math.Sqrt(denomanator2)));
         }
-        private void calculateAvgRatings() 
-        {
-            foreach (KeyValuePair<string, User> userEntry in usersToItems)
-            {
-                if (userEntry.Value.getAverageRating() != -1) continue;
-                double mone = 0.0;
-                int counter = 0;
-                Dictionary<double, int> hist = GetRatingsHistogram(userEntry.Key);
-                foreach (KeyValuePair<double, int> histEntry in hist)
-                {
-                    mone += histEntry.Key * histEntry.Value;
-                    counter += histEntry.Value;
-                }
-                userEntry.Value.setAverageRating((mone / counter));
-            }
-        }
+         
+         */
+
     }
 }
