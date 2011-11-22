@@ -125,6 +125,7 @@ namespace RecommenderSystem
             if (usersWPearson.ContainsKey(otherUID + "," + activeUID)) {
                 return usersWPearson[otherUID + "," + activeUID];
             }
+            // if the weigth has not been calculated before - calculate it!
             else return calcPearsonWeight(activeUID, otherUID);
         }
 
@@ -142,6 +143,8 @@ namespace RecommenderSystem
             double tmpNumerator1 = 0.0;
             double tmpNumerator2 = 0.0;
 
+
+            // iterates through Active's and Other's shared items. 
             foreach (KeyValuePair<string, Rating> activeItemEntry in activeItems) {
                 String itemID = activeItemEntry.Key;                                
                 if (otherItems.ContainsKey(itemID)) {
@@ -155,12 +158,15 @@ namespace RecommenderSystem
                 }
             }
             double wau;
+            // avoids division by zero
             if ((denomanator1 == 0.0) || (denomanator2 == 0.0)) {
                 wau = 0.0;
             }
             else {
                 wau = (numerator / (Math.Sqrt(denomanator1) * Math.Sqrt(denomanator2)));
             }
+
+            // updates dictionaries so next time this calculation will be avoided
             usersWPearson[activeUID + "," + otherUID] = wau;
             usersWPearson[otherUID + "," + activeUID] = wau;
             return wau;
@@ -212,6 +218,7 @@ namespace RecommenderSystem
             if (usersWCosine.ContainsKey(otherUID + "," + activeUID)) {
                 return usersWCosine[otherUID + "," + activeUID];
             }
+            // if the weigth has not been calculated before - calculate it!
             else return calcCosineWeight(activeUID, otherUID);
         }
 
@@ -228,6 +235,9 @@ namespace RecommenderSystem
             double tmpNumerator1 = 0.0;
             double tmpNumerator2 = 0.0;
 
+            // iterates through Active's items. If the other user did not rates this item, it get 0 value.
+            // this iteration covers all the item the either boths Active and Other user rated, and those 
+            // only the Active rated
             foreach (KeyValuePair<string, Rating> activeItemEntry in activeItems) {
                 String itemID = activeItemEntry.Key;
                 double Rai = activeItems[itemID].rating;
@@ -242,6 +252,7 @@ namespace RecommenderSystem
                 denomanator2 += Math.Pow(tmpNumerator2, 2);                
             }
 
+            // iterates through Other's items. Calculate only the items that the Active user DID NOT rate.
             foreach (KeyValuePair<string, Rating> otherItemEntry in otherItems) {
                 String itemID = otherItemEntry.Key;
                 if (!activeItems.ContainsKey(itemID)) {
@@ -256,12 +267,15 @@ namespace RecommenderSystem
             }
 
             double wau;
+            // avoids division by zero
             if ((denomanator1 == 0.0) || (denomanator2 == 0.0)) {
                 wau = 0.0;
             }
             else {
                 wau = (numerator / (Math.Sqrt(denomanator1) * Math.Sqrt(denomanator2)));
             }
+
+            // updates dictionaries so next time this calculation will be avoided
             usersWCosine[activeUID + "," + otherUID] = wau;
             usersWCosine[otherUID + "," + activeUID] = wau;
             return wau;
