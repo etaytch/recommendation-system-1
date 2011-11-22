@@ -113,8 +113,11 @@ namespace RecommenderSystem
         public Dictionary<string,double> ComputeHitRatio(List<string> lMethods, double dTrainSetSize)
         {
             throw new NotImplementedException();
-        }               
+        }
 
+
+
+        // Gets PearsonWeight for Active user and Other user
         private double getPearsonWeight(string activeUID, string otherUID) {
             if (usersWPearson.ContainsKey(activeUID + "," + otherUID)) {
                 return usersWPearson[activeUID + "," + otherUID];
@@ -125,6 +128,7 @@ namespace RecommenderSystem
             else return calcPearsonWeight(activeUID, otherUID);
         }
 
+        // Calculates PearsonWeight for Active user and Other user
         private double calcPearsonWeight(string activeUID, string otherUID) {
             
             Dictionary<string, Rating> activeItems = usersToItems[activeUID].getDictionary();
@@ -162,6 +166,7 @@ namespace RecommenderSystem
             return wau;
         }
 
+        // Calculate Pearson correlation for active user and item 
         private double pearson(string sUID, string sII) {
             double ans=0.0;
             double numerator = 0.0;
@@ -180,6 +185,7 @@ namespace RecommenderSystem
             return numerator / denomanator;        
         }
 
+        // Calculate Cosine correlation for active user and item
         private double cosine(string sUID, string sII) {
             double ans = 0.0;
             double numerator = 0.0;
@@ -198,6 +204,7 @@ namespace RecommenderSystem
             return numerator / denomanator;
         }
 
+        // Gets CosineWeight for Active user and Other user
         private double getCosineWeight(string activeUID, string otherUID) {
             if (usersWCosine.ContainsKey(activeUID + "," + otherUID)) {
                 return usersWCosine[activeUID + "," + otherUID];
@@ -208,6 +215,7 @@ namespace RecommenderSystem
             else return calcCosineWeight(activeUID, otherUID);
         }
 
+        // Calculates CosineWeight for Active user and Other user
         private double calcCosineWeight(string activeUID, string otherUID) {
             Dictionary<string, Rating> activeItems = usersToItems[activeUID].getDictionary();
             Dictionary<string, Rating> otherItems = usersToItems[otherUID].getDictionary();
