@@ -99,8 +99,13 @@ namespace RecommenderSystem
             if (sMethod.Equals("Pearson")) {
                 res = pearson(sUID, sIID);
             }
-            else if (sMethod.Equals("Cosine")) {
+            else if (sMethod.Equals("Cosine"))
+            {
                 res = cosine(sUID, sIID);
+            }
+            else if (sMethod.Equals("Random"))
+            {
+                res = generateRandomRating(sUID);
             }
             return res;
         }
@@ -115,7 +120,23 @@ namespace RecommenderSystem
             throw new NotImplementedException();
         }
 
-
+        //Calculates the average rating of every user and updates it.
+        private void calculateAvgRatings()
+        {
+            foreach (KeyValuePair<string, User> userEntry in usersToItems)
+            {
+                if (userEntry.Value.getAverageRating() != -1) continue;
+                double mone = 0.0;
+                int counter = 0;
+                Dictionary<double, int> hist = GetRatingsHistogram(userEntry.Key);
+                foreach (KeyValuePair<double, int> histEntry in hist)
+                {
+                    mone += histEntry.Key * histEntry.Value;
+                    counter += histEntry.Value;
+                }
+                userEntry.Value.setAverageRating((mone / counter));
+            }
+        }
 
         // Gets PearsonWeight for Active user and Other user
         private double getPearsonWeight(string activeUID, string otherUID) {
@@ -174,7 +195,6 @@ namespace RecommenderSystem
 
         // Calculate Pearson correlation for active user and item 
         private double pearson(string sUID, string sII) {
-            double ans=0.0;
             double numerator = 0.0;
             double denomanator = 0.0;
             Dictionary<string, Rating> currentItemUsers = itemsToUsers[sII].getDictionary();
@@ -281,23 +301,33 @@ namespace RecommenderSystem
             return wau;
         }
 
-        private void calculateAvgRatings() 
+        //Returns a random rating (that the user already voted) with the proper probability
+        private double generateRandomRating(string UID)
         {
-            foreach (KeyValuePair<string, User> userEntry in usersToItems)
+            double res = 0;
+            double totalRates = 0;
+            Dictionary<double, int> userRates = GetRatingsHistogram(UID);
+            foreach (KeyValuePair<double, int> currentRate in userRates)
             {
-                if (userEntry.Value.getAverageRating() != -1) continue;
-                double mone = 0.0;
-                int counter = 0;
-                Dictionary<double, int> hist = GetRatingsHistogram(userEntry.Key);
-                foreach (KeyValuePair<double, int> histEntry in hist)
-                {
-                    mone += histEntry.Key * histEntry.Value;
-                    counter += histEntry.Value;
-                }
-                userEntry.Value.setAverageRating((mone / counter));
+                totalRates += currentRate.Value;
             }
-        }
 
+            //generate random number in [1,totalRates]
+            Random random = new Random();
+            double rndm = random.NextDouble()*(totalRates-1)+1;
+
+            //Loop until rndm becomes negative then return the current rate
+            foreach (KeyValuePair<double, int> currentRate in userRates)
+            {
+                rndm -= currentRate.Value;
+                if (rndm <= 0) {
+                    res = currentRate.Key;
+                    break;
+                }
+            }
+
+            return res;
+        }
         /*
          private double pearson(string sUID, string sII)
         {
