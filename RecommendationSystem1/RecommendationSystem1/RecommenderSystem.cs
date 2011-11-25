@@ -389,6 +389,7 @@ namespace RecommenderSystem
             int amountOfTestRecords = (int)((1 - p) * numOfRecords);    // size of test db
             int countTestRecords = 0;                                   // counter for test db
             Random ran = new Random();
+            int ratingCounter = 0;
 
             while (countTestRecords < amountOfTestRecords) {
                 // randomize the next user
@@ -414,11 +415,13 @@ namespace RecommenderSystem
                     string nextItemID = itemsIDs.ElementAt(nextItem);
                     train.addRating(currentUserID, currentUserRatings[nextItemID]);
                     itemsIDs.RemoveAt(nextItem);
+                    ratingCounter++;
                 }                
 
                 // for all other items - add to test
                 foreach (string restItems in itemsIDs) {
                     test.addRating(currentUserID, currentUserRatings[restItems]);
+                    ratingCounter++;
                 }
                 countTestRecords += itemsIDs.Count;
                 
@@ -433,10 +436,11 @@ namespace RecommenderSystem
                 Dictionary<string, Rating> currentUserRatings = currentUser.getDictionary();
                 foreach (KeyValuePair<string, Rating> ratingEntry in currentUserRatings) {
                     train.addRating(uID, ratingEntry.Value);
+                    ratingCounter++;
                 }
             }
             
-            Console.WriteLine("train's # of users: " + train.usersSize() + ", test's # of users: " + test.usersSize());
+            Console.WriteLine("train's # of users: " + train.usersSize() + ", test's # of users: " + test.usersSize()+" total rating scanned: "+ratingCounter);
             train.calculateAvgRatings();
             test.calculateAvgRatings();
         }
