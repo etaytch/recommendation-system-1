@@ -112,7 +112,17 @@ namespace RecommenderSystem
         //return the predicted weights of all ratings that a user may give an item using one of the methods "Pearson", "Cosine", "Random"
         public Dictionary<double, double> PredictAllRatings(string sMethod, string sUID, string sIID)
         {
-            throw new NotImplementedException();
+            Dictionary<double, double> ans = new Dictionary<double, double>();
+            Item item = itemsToUsers[sIID];
+            Dictionary<string, Rating> usersRating = item.getDictionary();
+            foreach (KeyValuePair<string, Rating> usersRatingEntry in usersRating) {
+                double tmpRating = usersRatingEntry.Value.rating;
+                if (ans.ContainsKey(tmpRating)) {
+                    ans[tmpRating] += getWeight(sMethod, sUID, usersRatingEntry.Key);
+                }
+                else ans[tmpRating] = getWeight(sMethod, sUID, usersRatingEntry.Key);
+            }
+            return ans;
         }
         //Compute the hit ratio of all the methods in the list for a given train-test split (e.g. 0.95 train set size)
         public Dictionary<string,double> ComputeHitRatio(List<string> lMethods, double dTrainSetSize)
@@ -136,6 +146,12 @@ namespace RecommenderSystem
                 }
                 userEntry.Value.setAverageRating((mone / counter));
             }
+        }
+
+        private double getWeight(string method,string activeUID, string otherUID) {
+            if (method.Equals("Pearson")) return getPearsonWeight(activeUID, otherUID);
+            else if (method.Equals("Cosine")) return getCosineWeight(activeUID, otherUID);
+            else return 0.0;
         }
 
         // Gets PearsonWeight for Active user and Other user
@@ -212,8 +228,7 @@ namespace RecommenderSystem
         }
 
         // Calculate Cosine correlation for active user and item
-        private double cosine(string sUID, string sII) {
-            double ans = 0.0;
+        private double cosine(string sUID, string sII) {            
             double numerator = 0.0;
             double denomanator = 0.0;
             Dictionary<string, Rating> currentItemUsers = itemsToUsers[sII].getDictionary();
