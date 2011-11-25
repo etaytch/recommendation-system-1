@@ -17,16 +17,18 @@ namespace RecommenderSystem
             Console.WriteLine(rs.PredictRating("Pearson", "100", "345"));
             Console.WriteLine(rs.PredictRating("Cosine", "100", "345"));
             Console.WriteLine(rs.PredictRating("Random", "100", "345"));
-            /*
+            
             Dictionary<double, int> dAllRatings = rs.GetRatingsHistogram("100");
             foreach (KeyValuePair<double, int> p in dAllRatings)
                 Console.WriteLine(p.Key + "," + p.Value);
             Console.WriteLine("Predicted rating of user 6 to item 88 using Pearson Correlation is " + rs.PredictRating("Pearson", "6", "88"));
             Console.WriteLine("Predicted rating of user 6 to item 88 using Cosine similarity is " + rs.PredictRating("Cosine", "6", "88"));
             Dictionary<double, double> dAllPredictions = rs.PredictAllRatings("Pearson", "6", "88");
+            
             Console.WriteLine("All predicted ratings of user 6 to item 88 using Pearson Correlation are:");
             foreach (KeyValuePair<double, double> p in dAllPredictions)
                 Console.WriteLine(p.Key + "," + Math.Round(p.Value, 4));
+            /*
             List<string> lMethods = new List<string>();
             lMethods.Add("Pearson");
             lMethods.Add("Cosine");
