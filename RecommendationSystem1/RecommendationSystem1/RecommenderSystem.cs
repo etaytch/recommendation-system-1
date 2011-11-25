@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using RecommendationSystem;
 
 namespace RecommenderSystem
 {
@@ -10,9 +11,12 @@ namespace RecommenderSystem
         //Class members here (e.g. a dataset)
         private Dictionary<string, User> usersToItems;
         private Dictionary<string, Item> itemsToUsers;
+        private db test;
+        private db train;
         private Dictionary<string, double> usersWPearson;
         private Dictionary<string, double> usersWCosine;
         private List<string> usersIDs;
+        private int numOfRecords;
 
         public RecommenderSystem()
         {
@@ -22,6 +26,9 @@ namespace RecommenderSystem
             usersWPearson = new Dictionary<string, double>();
             usersWCosine = new Dictionary<string, double>();
             usersIDs = new List<string>();
+            test = new db();
+            train = new db();
+            numOfRecords = 0;
        }
 
         //load a dataset from a file
@@ -34,6 +41,7 @@ namespace RecommenderSystem
                new System.IO.StreamReader("ml-100k\\u.data");
             while ((line = file.ReadLine()) != null)
             {
+                numOfRecords++;
                 string[] words = line.Split('	');
                 Rating r = new Rating(words[0], words[1], Convert.ToInt32(words[2]), words[3]);
 
@@ -375,43 +383,62 @@ namespace RecommenderSystem
 
             return res;
         }
-        /*
-         private double pearson(string sUID, string sII)
-        {
-            double numerator = 0;
-            double denomanator1 = 0;
-            double denomanator2 = 0;
-            //Pearson here
-            //calculate w's
-            //<itemID, Rating>
-            Dictionary<string, Rating> userItems = usersToItems[sUID].getDictionary();
 
-            foreach (KeyValuePair<string, Rating> itemEntry in userItems)
-            {
-                //rating of a for this item
-                Rating ratingA = userItems[itemEntry.Key];
+        public void splitDB(double p) {            
+            List<string> users = new List<string>(usersToItems.Keys);   // a copy of users ids            
+            int amountOfTestRecords = (int)((1 - p) * numOfRecords);    // size of test db
+            int countTestRecords = 0;                                   // counter for test db
+            Random ran = new Random();
 
-                //itemEntry is a specific item of user sUID and we want to know which other
-                //users rated this item
-                //<userID, Rating>
-                Dictionary<string, Rating> usersOfItem = itemsToUsers[itemEntry.Key].getDictionary();
+            while (countTestRecords < amountOfTestRecords) {
+                // randomize the next user
+                int nextUser = ran.Next(0, users.Count);        
+                string currentUserID = users.ElementAt(nextUser);
+                User currentUser = usersToItems[currentUserID];
+                Dictionary<string, Rating> currentUserRatings = currentUser.getDictionary();
 
-                foreach (KeyValuePair<string, Rating> ratingEntry in usersOfItem)
-                {
-                    if (ratingEntry.Key.Equals(sUID)) continue;
+                train.addUser(currentUserID);
+                test.addUser(currentUserID);    // is it necessary when all user's rating are at the train?
 
-                    double tmpNumerator1 = (ratingA.rating - usersToItems[sUID].getAverageRating());
-                    double tmpNumerator2 = (ratingEntry.Value.rating - usersToItems[ratingEntry.Key].getAverageRating());
-                    numerator += tmpNumerator1 * tmpNumerator2;
-                    denomanator1 += Math.Pow(tmpNumerator1, 2);
-                    denomanator2 += Math.Pow(tmpNumerator2, 2);
-                }    
+
+                List<string> itemsIDs = new List<string>(currentUserRatings.Keys);        // copy of items IDs
+
+                int amountOfItems = currentUser.getDictionary().Count;                    // amount of items
+
+                int k = ran.Next(0, amountOfItems);                                       // randomize amount of items
+                k = Math.Min(k, (amountOfTestRecords - countTestRecords));                // to put in the train
+
+                // for each item - add it to the train and remove from temp item list
+                for (int i = 0; i < k;i++ ) {
+                    int nextItem = ran.Next(0, itemsIDs.Count);
+                    string nextItemID = itemsIDs.ElementAt(nextItem);
+                    train.addRating(currentUserID, currentUserRatings[nextItemID]);
+                    itemsIDs.RemoveAt(nextItem);
+                }                
+
+                // for all other items - add to test
+                foreach (string restItems in itemsIDs) {
+                    test.addRating(currentUserID, currentUserRatings[restItems]);
+                }
+                countTestRecords += itemsIDs.Count;
+                
+                // remove user from temp list
+                users.RemoveAt(nextUser);                
             }
 
-            return (numerator / (Math.Sqrt(denomanator1)*Math.Sqrt(denomanator2)));
+            // for all the other users (those who not yet been selected because the test is full): add each user's rating to the train
+            foreach (string uID in users) {
+                train.addUser(uID);
+                User currentUser = usersToItems[uID];
+                Dictionary<string, Rating> currentUserRatings = currentUser.getDictionary();
+                foreach (KeyValuePair<string, Rating> ratingEntry in currentUserRatings) {
+                    train.addRating(uID, ratingEntry.Value);
+                }
+            }
+            
+            Console.WriteLine("train's # of users: " + train.usersSize() + ", test's # of users: " + test.usersSize());
+            train.calculateAvgRatings();
+            test.calculateAvgRatings();
         }
-         
-         */
-
     }
 }

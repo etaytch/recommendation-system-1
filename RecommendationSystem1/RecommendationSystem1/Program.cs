@@ -28,6 +28,8 @@ namespace RecommenderSystem
             Console.WriteLine("All predicted ratings of user 6 to item 88 using Pearson Correlation are:");
             foreach (KeyValuePair<double, double> p in dAllPredictions)
                 Console.WriteLine(p.Key + "," + Math.Round(p.Value, 4));
+
+            rs.splitDB(0.95);
             /*
             List<string> lMethods = new List<string>();
             lMethods.Add("Pearson");
