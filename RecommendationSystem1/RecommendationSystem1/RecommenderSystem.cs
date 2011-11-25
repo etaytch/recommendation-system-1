@@ -112,12 +112,14 @@ namespace RecommenderSystem
         //return the predicted weights of all ratings that a user may give an item using one of the methods "Pearson", "Cosine", "Random"
         public Dictionary<double, double> PredictAllRatings(string sMethod, string sUID, string sIID)
         {
-            int k = 50;
-            Dictionary<double, double> ans = new Dictionary<double, double>();
-            Dictionary<double, List<string>> weightUsers = new Dictionary<double, List<string>>();
-            Item item = itemsToUsers[sIID];
-            Dictionary<string, Rating> usersRating = item.getDictionary();
-            foreach (KeyValuePair<string, Rating> usersRatingEntry in usersRating) {
+            int k = 50;     // some random environment value
+            Dictionary<double, double> ans = new Dictionary<double, double>();  // will store the answer
+            Dictionary<double, List<string>> weightUsers = new Dictionary<double, List<string>>();  // maps calculated weight to list of users
+            Item item = itemsToUsers[sIID];     // given Item
+            Dictionary<string, Rating> usersRating = item.getDictionary();      // users who rates the Item
+
+            // for each user who rated the item, calculate the Wau and store them in the weightUsers Dictionary
+            foreach (KeyValuePair<string, Rating> usersRatingEntry in usersRating) {    
                 string otherUserID = usersRatingEntry.Key;
                 double tmpRating = usersRatingEntry.Value.rating;
                 double Wau = getWeight(sMethod, sUID, usersRatingEntry.Key);
@@ -129,11 +131,14 @@ namespace RecommenderSystem
                     weightUsers[Wau].Add(otherUserID);
                 }               
             }
+
+            // sort the Weights list (We want to choose the highest K Weights)
             List<double> sortedWeights = new List<double>(weightUsers.Keys);
             sortedWeights.Sort();
             sortedWeights.Reverse();
 
             int i = 0;
+            // for each Weight - store it in the Dictionary
             foreach (double w in sortedWeights) {
                 if (i > k) break;
                 foreach(string u in weightUsers[w]){
@@ -144,20 +149,9 @@ namespace RecommenderSystem
                     }
                     else ans[tmpRating] = w;
                     i++;
-                }
-                //Console.Write(str + ", ");
+                }                
             }
 
-            /*
-            Console.WriteLine("printing sorted weights");
-            foreach (double d in sortedWeights) {
-                Console.WriteLine("weight " + d + " users:");
-                foreach (string str in weightUsers[d]) {
-                    Console.Write(str+", ");
-                }
-                Console.WriteLine();
-            }
-            */
             return ans;
         }
 
