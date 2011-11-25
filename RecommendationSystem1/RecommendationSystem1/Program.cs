@@ -39,7 +39,7 @@ namespace RecommenderSystem
                 Console.Write(p.Key + "=" + Math.Round(p.Value,4) + ", ");
             Console.WriteLine();
             Console.ReadLine();
-             * */
+            */
         }
     }
 }

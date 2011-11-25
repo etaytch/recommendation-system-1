@@ -112,18 +112,56 @@ namespace RecommenderSystem
         //return the predicted weights of all ratings that a user may give an item using one of the methods "Pearson", "Cosine", "Random"
         public Dictionary<double, double> PredictAllRatings(string sMethod, string sUID, string sIID)
         {
+            int k = 50;
             Dictionary<double, double> ans = new Dictionary<double, double>();
+            Dictionary<double, List<string>> weightUsers = new Dictionary<double, List<string>>();
             Item item = itemsToUsers[sIID];
             Dictionary<string, Rating> usersRating = item.getDictionary();
             foreach (KeyValuePair<string, Rating> usersRatingEntry in usersRating) {
+                string otherUserID = usersRatingEntry.Key;
                 double tmpRating = usersRatingEntry.Value.rating;
-                if (ans.ContainsKey(tmpRating)) {
-                    ans[tmpRating] += getWeight(sMethod, sUID, usersRatingEntry.Key);
+                double Wau = getWeight(sMethod, sUID, usersRatingEntry.Key);
+                if (weightUsers.ContainsKey(Wau)) {
+                    weightUsers[Wau].Add(otherUserID);
                 }
-                else ans[tmpRating] = getWeight(sMethod, sUID, usersRatingEntry.Key);
+                else {
+                    weightUsers[Wau] = new List<string>();
+                    weightUsers[Wau].Add(otherUserID);
+                }               
             }
+            List<double> sortedWeights = new List<double>(weightUsers.Keys);
+            sortedWeights.Sort();
+            sortedWeights.Reverse();
+
+            int i = 0;
+            foreach (double w in sortedWeights) {
+                if (i > k) break;
+                foreach(string u in weightUsers[w]){
+                    if (i > k) break;
+                    double tmpRating = usersRating[u].rating;
+                    if (ans.ContainsKey(tmpRating)) {
+                        ans[tmpRating] += w;
+                    }
+                    else ans[tmpRating] = w;
+                    i++;
+                }
+                //Console.Write(str + ", ");
+            }
+
+            /*
+            Console.WriteLine("printing sorted weights");
+            foreach (double d in sortedWeights) {
+                Console.WriteLine("weight " + d + " users:");
+                foreach (string str in weightUsers[d]) {
+                    Console.Write(str+", ");
+                }
+                Console.WriteLine();
+            }
+            */
             return ans;
         }
+
+
         //Compute the hit ratio of all the methods in the list for a given train-test split (e.g. 0.95 train set size)
         public Dictionary<string,double> ComputeHitRatio(List<string> lMethods, double dTrainSetSize)
         {
