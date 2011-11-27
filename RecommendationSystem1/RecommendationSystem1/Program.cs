@@ -10,7 +10,7 @@ namespace RecommenderSystem
     {
 
         static void Main(string[] args)
-        {            
+        {
             RecommenderSystem rs = new RecommenderSystem();
             rs.Load("MovieLens/u.data");
             Console.WriteLine("True rating of user 6 to item 86 is " + rs.GetRating("6", "86"));
@@ -29,8 +29,6 @@ namespace RecommenderSystem
             foreach (KeyValuePair<double, double> p in dAllPredictions)
                 Console.WriteLine(p.Key + "," + Math.Round(p.Value, 4));
 
-            rs.splitDB(0.95);
-            /*
             List<string> lMethods = new List<string>();
             lMethods.Add("Pearson");
             lMethods.Add("Cosine");
@@ -41,7 +39,7 @@ namespace RecommenderSystem
                 Console.Write(p.Key + "=" + Math.Round(p.Value,4) + ", ");
             Console.WriteLine();
             Console.ReadLine();
-            */
+            
         }
     }
 }

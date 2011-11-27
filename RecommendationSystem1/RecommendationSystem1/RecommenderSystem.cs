@@ -167,7 +167,70 @@ namespace RecommenderSystem
         //Compute the hit ratio of all the methods in the list for a given train-test split (e.g. 0.95 train set size)
         public Dictionary<string,double> ComputeHitRatio(List<string> lMethods, double dTrainSetSize)
         {
-            throw new NotImplementedException();
+            Dictionary<string, double> res = new Dictionary<string, double>(); //the result will be stored here
+            splitDB(dTrainSetSize); //First splitting the database
+
+            Dictionary<string, User> users = test.UsersToItems; //All the users in the test
+
+            int pearsonHits = 0;
+            int cosineHits = 0;
+            int randomHits = 0;
+            int totalRatingsCount = 0;
+
+            //Iterates on all the users, and then for each user iterates on all his ratings.
+            //then evaluates the predicted rating for each method in lMethod.
+            foreach (KeyValuePair<string, User> userEntry in users)
+            {
+                Dictionary<string, Rating> itemsOfUser = userEntry.Value.getDictionary();
+                foreach (KeyValuePair<string, Rating> itemEntry in itemsOfUser)
+                {
+                    totalRatingsCount++;
+
+                    if (lMethods.Contains("Pearson"))
+                    {
+                        int pearsonPred = 0;
+                        pearsonPred = (int)Math.Round(PredictRating("Pearson", userEntry.Key, itemEntry.Key));
+                        if (pearsonPred == itemEntry.Value.rating)
+                        {
+                            pearsonHits++;
+                        }
+                    }
+
+                    if (lMethods.Contains("Cosine"))
+                    {
+                        int cosinePred = 0;
+                        cosinePred = (int)Math.Round(PredictRating("Cosine", userEntry.Key, itemEntry.Key));
+                        if (cosinePred == itemEntry.Value.rating)
+                        {
+                            cosineHits++;
+                        }
+                    }
+
+                    if (lMethods.Contains("Random"))
+                    {
+                        double randomPred = 0;
+                        randomPred = (int)Math.Round(PredictRating("Random", userEntry.Key, itemEntry.Key));
+                        if (randomPred == itemEntry.Value.rating)
+                        {
+                            randomHits++;
+                        }
+                    }
+                }
+            }
+
+            if(lMethods.Contains("Pearson"))
+            {
+                res["Pearson"] = (double)pearsonHits / totalRatingsCount;
+            }
+            if (lMethods.Contains("Cosine"))
+            {
+                res["Cosine"] = (double)cosineHits / totalRatingsCount;
+            }
+            if (lMethods.Contains("Random"))
+            {
+                res["Random"] = (double)randomHits / totalRatingsCount;
+            }
+            return res;
         }
 
         //Calculates the average rating of every user and updates it.
@@ -384,14 +447,18 @@ namespace RecommenderSystem
             return res;
         }
 
-        public void splitDB(double p) {            
+        public void splitDB(double p) {
+            test = new db();
+            train = new db();
             List<string> users = new List<string>(usersToItems.Keys);   // a copy of users ids            
             int amountOfTestRecords = (int)((1 - p) * numOfRecords);    // size of test db
             int countTestRecords = 0;                                   // counter for test db
             Random ran = new Random();
             int ratingCounter = 0;
 
-            while (countTestRecords < amountOfTestRecords) {
+            //We assumed that on low values of P, the test size would not necessarily be the declared "amountOfTestRecords"
+            //because k is chosen randomally and we can't control it
+            while (countTestRecords < amountOfTestRecords && users.Count > 0) {
                 // randomize the next user
                 int nextUser = ran.Next(0, users.Count);        
                 string currentUserID = users.ElementAt(nextUser);
