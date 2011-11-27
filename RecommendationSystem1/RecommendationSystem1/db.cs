@@ -4,7 +4,8 @@ using System.Linq;
 using System.Text;
 using RecommenderSystem;
 
-namespace RecommendationSystem {
+namespace RecommenderSystem
+{
     class db {
 
         private Dictionary<string, User> usersToItems;

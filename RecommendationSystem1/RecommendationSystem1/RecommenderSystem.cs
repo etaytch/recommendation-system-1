@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using RecommendationSystem;
 
 namespace RecommenderSystem
 {
@@ -19,7 +18,7 @@ namespace RecommenderSystem
         private int numOfRecords;
 
         private const double limitEnvironmentPearson = -0.3;
-        private const double limitEnvironmentCosine = 0.08;
+        private const double limitEnvironmentCosine = 0.0;
 
         public RecommenderSystem()
         {
