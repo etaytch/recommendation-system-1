@@ -6,7 +6,7 @@ using RecommenderSystem;
 
 namespace RecommenderSystem
 {
-    class db {
+    class Db {
 
         private Dictionary<string, User> usersToItems;
         public Dictionary<string, User> UsersToItems
@@ -22,7 +22,7 @@ namespace RecommenderSystem
             set { itemsToUsers = value; }
         }
 
-        public db() { 
+        public Db() { 
             usersToItems = new Dictionary<string, User>();
             itemsToUsers = new Dictionary<string, Item>();
         }

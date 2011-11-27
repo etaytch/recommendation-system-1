@@ -10,8 +10,8 @@ namespace RecommenderSystem
         //Class members here (e.g. a dataset)
         private Dictionary<string, User> usersToItems;
         private Dictionary<string, Item> itemsToUsers;
-        private db test;
-        private db train;
+        private Db test;
+        private Db train;
         private Dictionary<string, double> usersWPearson;
         private Dictionary<string, double> usersWCosine;
         private List<string> usersIDs;
@@ -28,8 +28,8 @@ namespace RecommenderSystem
             usersWPearson = new Dictionary<string, double>();
             usersWCosine = new Dictionary<string, double>();
             usersIDs = new List<string>();
-            test = new db();
-            train = new db();
+            test = new Db();
+            train = new Db();
             numOfRecords = 0;
        }
 
@@ -500,11 +500,11 @@ namespace RecommenderSystem
         }
 
         public void splitDB(double p) {
-            test = new db();
-            train = new db();
+            test = new Db();
+            train = new Db();
             List<string> users = new List<string>(usersToItems.Keys);   // a copy of users ids            
-            int amountOfTestRecords = (int)((1 - p) * numOfRecords);    // size of test db
-            int countTestRecords = 0;                                   // counter for test db
+            int amountOfTestRecords = (int)((1 - p) * numOfRecords);    // size of test Db
+            int countTestRecords = 0;                                   // counter for test Db
             Random ran = new Random();
             int ratingCounter = 0;
 
