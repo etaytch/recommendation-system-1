@@ -18,6 +18,9 @@ namespace RecommenderSystem
         private List<string> usersIDs;
         private int numOfRecords;
 
+        private const double limitEnvironmentPearson = -0.3;
+        private const double limitEnvironmentCosine = 0.08;
+
         public RecommenderSystem()
         {
             
@@ -120,7 +123,7 @@ namespace RecommenderSystem
         //return the predicted weights of all ratings that a user may give an item using one of the methods "Pearson", "Cosine", "Random"
         public Dictionary<double, double> PredictAllRatings(string sMethod, string sUID, string sIID)
         {
-            int k = 50;     // some random environment value
+            int k = 500;     // some random environment value
             Dictionary<double, double> ans = new Dictionary<double, double>();  // will store the answer
             Dictionary<double, List<string>> weightUsers = new Dictionary<double, List<string>>();  // maps calculated weight to list of users
             Item item = itemsToUsers[sIID];     // given Item
@@ -184,6 +187,7 @@ namespace RecommenderSystem
                 Dictionary<string, Rating> itemsOfUser = userEntry.Value.getDictionary();
                 foreach (KeyValuePair<string, Rating> itemEntry in itemsOfUser)
                 {
+
                     totalRatingsCount++;
 
                     if (lMethods.Contains("Pearson"))
@@ -320,6 +324,7 @@ namespace RecommenderSystem
             foreach (KeyValuePair<string, Rating> userEntry in currentItemUsers) {
                 if (sUID.Equals(userEntry.Key)) continue;
                 double Wau = getPearsonWeight(sUID, userEntry.Key);
+                if (Wau < limitEnvironmentPearson) continue;
                 numerator += Wau * currentItemUsers[userEntry.Key].rating;
                 denomanator += Wau;
             }
@@ -338,6 +343,8 @@ namespace RecommenderSystem
             foreach (KeyValuePair<string, Rating> userEntry in currentItemUsers) {
                 if (sUID.Equals(userEntry.Key)) continue;
                 double Wau = getCosineWeight(sUID, userEntry.Key);
+                //Console.Write(Wau + " ");
+                if (Wau < limitEnvironmentCosine) continue;
                 numerator += Wau * currentItemUsers[userEntry.Key].rating;
                 denomanator += Wau;
             }
@@ -357,11 +364,57 @@ namespace RecommenderSystem
                 return usersWCosine[otherUID + "," + activeUID];
             }
             // if the weigth has not been calculated before - calculate it!
-            else return calcCosineWeight(activeUID, otherUID);
+            else return calcCosineWeightSecondFormula(activeUID, otherUID);
         }
 
-        // Calculates CosineWeight for Active user and Other user
-        private double calcCosineWeight(string activeUID, string otherUID) {
+        // Calculates CosineWeight for Active user and Other user with the first Formula
+        private double calcCosineWeightFirstFormula(string activeUID, string otherUID)
+        {
+
+            Dictionary<string, Rating> activeItems = usersToItems[activeUID].getDictionary();
+            Dictionary<string, Rating> otherItems = usersToItems[otherUID].getDictionary();
+            double activeAverageRating = usersToItems[activeUID].getAverageRating();
+            double otherAverageRating = usersToItems[otherUID].getAverageRating();
+
+            double numerator = 0.0;
+            double denomanator1 = 0.0;
+            double denomanator2 = 0.0;
+            double tmpNumerator = 0.0;
+
+
+            // iterates through Active's and Other's shared items. 
+            foreach (KeyValuePair<string, Rating> activeItemEntry in activeItems)
+            {
+                String itemID = activeItemEntry.Key;
+                if (otherItems.ContainsKey(itemID))
+                {
+                    double Rai = activeItems[itemID].rating;
+                    double Rui = otherItems[itemID].rating;
+                    tmpNumerator = Rai * Rui;
+                    numerator += tmpNumerator;
+                    denomanator1 += Math.Pow(tmpNumerator, 2);
+                    denomanator2 += Math.Pow(tmpNumerator, 2);
+                }
+            }
+            double wau;
+            // avoids division by zero
+            if ((denomanator1 == 0.0) || (denomanator2 == 0.0))
+            {
+                wau = 0.0;
+            }
+            else
+            {
+                wau = (numerator / (Math.Sqrt(denomanator1) * Math.Sqrt(denomanator2)));
+            }
+
+            // updates dictionaries so next time this calculation will be avoided
+            usersWCosine[activeUID + "," + otherUID] = wau;
+            usersWCosine[otherUID + "," + activeUID] = wau;
+            return wau;
+        }
+
+        // Calculates CosineWeight for Active user and Other user with the second formula
+        private double calcCosineWeightSecondFormula(string activeUID, string otherUID) {
             Dictionary<string, Rating> activeItems = usersToItems[activeUID].getDictionary();
             Dictionary<string, Rating> otherItems = usersToItems[otherUID].getDictionary();
             double activeAverageRating = usersToItems[activeUID].getAverageRating();
@@ -506,8 +559,6 @@ namespace RecommenderSystem
                     ratingCounter++;
                 }
             }
-            
-            Console.WriteLine("train's # of users: " + train.usersSize() + ", test's # of users: " + test.usersSize()+" total rating scanned: "+ratingCounter);
             train.calculateAvgRatings();
             test.calculateAvgRatings();
         }
