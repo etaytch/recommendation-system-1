@@ -6,8 +6,20 @@ using RecommenderSystem;
 
 namespace RecommendationSystem {
     class db {
+
         private Dictionary<string, User> usersToItems;
+        public Dictionary<string, User> UsersToItems
+        {
+            get { return usersToItems; }
+            set { usersToItems = value; }
+        }
+
         private Dictionary<string, Item> itemsToUsers;
+        public Dictionary<string, Item> ItemsToUsers
+        {
+            get { return itemsToUsers; }
+            set { itemsToUsers = value; }
+        }
 
         public db() { 
             usersToItems = new Dictionary<string, User>();
