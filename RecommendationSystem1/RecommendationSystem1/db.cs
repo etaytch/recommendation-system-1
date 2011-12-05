@@ -30,7 +30,7 @@ namespace RecommenderSystem
         public int usersSize() {
             return usersToItems.Count;
         }
-
+        
         public void addUser(string user_id) {
             usersToItems[user_id] = new User();
         }
