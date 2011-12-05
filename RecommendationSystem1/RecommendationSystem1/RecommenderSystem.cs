@@ -34,7 +34,7 @@ namespace RecommenderSystem
        }
 
         //load a dataset from a file
-        public void Load(string sFileName)
+        public void Load(string sFileName, double dTrainSetSize)
         {
             string line;
 
@@ -80,6 +80,9 @@ namespace RecommenderSystem
             }
             file.Close();
             this.calculateAvgRatings();
+
+            //Split the database
+            splitDB(dTrainSetSize); //First splitting the database
         }
         //return an existing rating 
         public double GetRating(string sUID, string sIID)
@@ -167,10 +170,9 @@ namespace RecommenderSystem
 
 
         //Compute the hit ratio of all the methods in the list for a given train-test split (e.g. 0.95 train set size)
-        public Dictionary<string,double> ComputeHitRatio(List<string> lMethods, double dTrainSetSize)
+        public Dictionary<string,double> ComputeHitRatio(List<string> lMethods)
         {
             Dictionary<string, double> res = new Dictionary<string, double>(); //the result will be stored here
-            splitDB(dTrainSetSize); //First splitting the database
 
             Dictionary<string, User> users = test.UsersToItems; //All the users in the test
 
@@ -234,6 +236,28 @@ namespace RecommenderSystem
                 res["Random"] = (double)randomHits / totalRatingsCount;
             }
             return res;
+        }
+
+        //Compute the RMSE of all the methods in the list for a given train-test split (e.g. 0.95 train set size)
+        public Dictionary<string, double> ComputeRMSE(List<string> lMethods)
+        {
+            Dictionary<string, double> res = new Dictionary<string, double>(); //the result will be stored here
+            Dictionary<string, User> users = test.UsersToItems; //All the users in the test
+            
+            double numerator = 0;
+
+            foreach (KeyValuePair<string, User> currentUser in users)
+            {
+                Dictionary<string, Rating> userRatings = currentUser.Value.getDictionary();
+                foreach (KeyValuePair<string, Rating> currentRating in userRatings)
+                {
+                    numerator += Math.Pow((currentRating.Value.rating - PredictRating("Pearson", currentUser.Key, currentRating.Key)), 2);
+                }
+            }
+
+            res["Pearson"] = Math.Sqrt(numerator / this.numOfRecords);
+            return res;
+
         }
 
         //Calculates the average rating of every user and updates it.
