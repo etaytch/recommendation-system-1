@@ -13,27 +13,7 @@ namespace RecommenderSystem
         {
             RecommenderSystem rs = new RecommenderSystem();
 
-            rs.Load("MovieLens/u.data");
-
-            Console.WriteLine("True rating of user 6 to item 86 is " + rs.GetRating("6", "86"));
-
-            Dictionary<double, int> dAllRatings = rs.GetRatingsHistogram("100");
-
-            foreach (KeyValuePair<double, int> p in dAllRatings)
-
-                Console.WriteLine(p.Key + "," + p.Value);
-
-            Console.WriteLine("Predicted rating of user 6 to item 88 using Pearson Correlation is " + Math.Round(rs.PredictRating("Pearson", "6", "88"), 4));
-
-            Console.WriteLine("Predicted rating of user 6 to item 88 using Cosine similarity is " + Math.Round(rs.PredictRating("Cosine", "6", "88"), 4));
-
-            Dictionary<double, double> dAllPredictions = rs.PredictAllRatings("Pearson", "6", "88");
-
-            Console.WriteLine("All predicted ratings of user 6 to item 88 using Pearson Correlation are:");
-
-            foreach (KeyValuePair<double, double> p in dAllPredictions)
-
-                Console.WriteLine(p.Key + "," + Math.Round(p.Value, 4));
+            rs.Load("MovieLens/u.data", 0.9);
 
             List<string> lMethods = new List<string>();
 
@@ -45,9 +25,7 @@ namespace RecommenderSystem
 
             DateTime dtStart = DateTime.Now;
 
-            Dictionary<string, double> dResults = rs.ComputeHitRatio(lMethods, 0.9);
-
-            Console.WriteLine("Hit ratio scores for Pearson, Cosine, and Random are:");
+            Dictionary<string, double> dResults = rs.ComputeRMSE(lMethods);
 
             foreach (KeyValuePair<string, double> p in dResults)
 
