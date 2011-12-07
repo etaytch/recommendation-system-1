@@ -9,6 +9,8 @@ namespace RecommenderSystem
     {
         //Class members here (e.g. a dataset)
         private Dictionary<string, User> usersToItems;
+        private Dictionary<string, VectorDO> usersVector;
+        private Dictionary<string, VectorDO> itemsVector;
         private Dictionary<string, Item> itemsToUsers;
         private Db test;
         private Db train;
@@ -25,7 +27,9 @@ namespace RecommenderSystem
         {
             
             usersToItems = new Dictionary<string, User>();
+            usersVector = new Dictionary<string, VectorDO>();            
             itemsToUsers = new Dictionary<string, Item>();
+            itemsVector = new Dictionary<string, VectorDO>();
             usersWPearson = new Dictionary<string, double>();
             usersWCosine = new Dictionary<string, double>();
             usersIDs = new List<string>();
@@ -120,6 +124,10 @@ namespace RecommenderSystem
             else if (sMethod.Equals("Random"))
             {
                 res = generateRandomRating(sUID);
+            }
+            else if (sMethod.Equals("SVD")) 
+            {                
+                res = getMu(usersToItems) + usersVector[sUID].getVal() + itemsVector[sUID].getVal() + multVectors(itemsVector[sIID].getVec(), usersVector[sUID].getVec());
             }
             return res;
         }
@@ -618,14 +626,138 @@ namespace RecommenderSystem
 
         }
 
+        private double ComputeValidationRMSE() {
+            double acc = 0;
+            int count = 0;
+            foreach (KeyValuePair<string, User> currentUser in validation.UsersToItems) {
+                Dictionary<string, Rating> userItems = currentUser.Value.getDictionary();
+                foreach (KeyValuePair<string, Rating> rating in userItems) {
+                    double tmp = PredictRating("SVD", currentUser.Key, rating.Key);
+                    acc += Math.Pow(userItems[rating.Key].rating - tmp,2);
+                    count++;
+                }
+            }
+            return Math.Sqrt(acc / count);
+        }
+
+
         public void TrainBaseModel(int latentFeatures)
         {
             //Splitting the train into train and validation DBs
             splitTrain(0.95);
 
-            double mu = this.getMu();
-            Console.WriteLine("mu = " + getMu());
+            double mu = this.getMu(train.UsersToItems);
+            Console.WriteLine("mu = " + getMu(train.UsersToItems));
+                       
+            Random ran = new Random();
+            
+            foreach (KeyValuePair<string, User> userEntry in usersToItems) { 
+                double[] pu = new double[latentFeatures];
+                for(int i=0;i<latentFeatures;i++){
+                    pu[i] = (double)(ran.Next(-5, 5)) / 10000;
+                }
+                double bu = (double)(ran.Next(-5, 5)) / 10000;
+                VectorDO vecDO = new VectorDO(pu,bu);
+                usersVector[userEntry.Key] = vecDO;
+            }
 
+            foreach (KeyValuePair<string, Item> itemsEntry in itemsToUsers) { 
+                double[] qi = new double[latentFeatures];
+                for(int i=0;i<latentFeatures;i++){
+                    qi[i] = (double)(ran.Next(-5, 5)) / 10000;
+                }    
+                double bi = (double)(ran.Next(-5, 5)) / 10000;
+                VectorDO vecDO = new VectorDO(qi,bi);
+                itemsVector[itemsEntry.Key] = vecDO;
+            }
+
+            double y = 0.05;//(double)(ran.Next(-5, 5)) / 100;
+            double gamma = 0.05;//(double)(ran.Next(-5, 0)) / 100;
+            
+            double prevRMSE = ComputeValidationRMSE();
+            double currentRMSE = prevRMSE;            
+            do {
+                prevRMSE = currentRMSE;
+                updateTrainSet(mu,y,gamma);
+                currentRMSE = ComputeValidationRMSE();
+            } while(currentRMSE <= prevRMSE);
+                        
+        }
+
+        public void updateTrainSet(double mu,double y, double gamma){
+             foreach (KeyValuePair<string, User> userEntry in train.UsersToItems) { 
+                String userID = userEntry.Key;
+                VectorDO userVec = usersVector[userID];
+                double bu = userVec.getVal();
+                double[] pu = userVec.getVec();
+                double eui=0;
+                foreach (KeyValuePair<string, Rating> itemEntry in userEntry.Value.getDictionary()){
+                    String itemID = itemEntry.Key;
+                    VectorDO itemVec = itemsVector[itemID];
+                    double bi = itemVec.getVal();
+                    double[] qi = itemVec.getVec();
+                    double rui = itemEntry.Value.rating;
+                    eui = rui-mu-bi-bu-multVectors(pu,qi);
+
+                    bu = bu + y * (eui-(gamma*bu));
+                    userVec.setVal(bu);
+                    bi = bi + y * (eui-(gamma*bi));
+                    itemVec.setVal(bi);
+                    qi = addVectors (qi,multScalarVector(y,(subVectors(multScalarVector(eui,pu),multScalarVector(gamma,qi)))));
+                    itemVec.setVec(qi);
+                    pu = addVectors (pu,multScalarVector(y,(subVectors(multScalarVector(eui,qi),multScalarVector(gamma,pu)))));
+                    userVec.setVec(pu);
+                }
+            }
+        }
+
+        private double[] multScalarVector(double scalar, double[] vector) {
+            double[] ans = new double[vector.Length];
+            for (int i = 0; i < vector.Length; i++) {
+                 ans[i] = vector[i]*scalar;
+            }
+            return ans;
+        }
+
+        private double[] addScalarVector(double scalar, double[] vector) {
+            double[] ans = new double[vector.Length];
+            for (int i = 0; i < vector.Length; i++) {
+                ans[i] = vector[i] + scalar;
+            }
+            return ans;
+        }
+
+        private double[] addVectors(double[] vec1, double[] vec2) {
+            if (vec1.Length != vec2.Length) {
+                return null;
+            }
+            double[] ans = new double[vec1.Length];
+            for (int i = 0; i < vec1.Length; i++) {
+                ans[i] += (vec1[i] + vec2[i]);
+            }
+            return ans;
+        }
+
+        private double[] subVectors(double[] vec1, double[] vec2) {
+            if (vec1.Length != vec2.Length) {
+                return null;
+            }
+            double[] ans = new double[vec1.Length];
+            for (int i = 0; i < vec1.Length; i++) {
+                ans[i] += (vec1[i] - vec2[i]);
+            }
+            return ans;
+        }
+
+        private double multVectors(double[] vec1, double[] vec2) {
+            if (vec1.Length!= vec2.Length) {
+                return -99999;
+            }
+            double acc = 0;
+            for(int i=0;i<vec1.Length;i++){
+                acc += (vec1[i] * vec2[i]);
+            }
+            return acc;
         }
 
         private void splitTrain(double p)
@@ -678,9 +810,9 @@ namespace RecommenderSystem
             //Console.WriteLine("train size = " + train.usersSize() + " validation size = " + validation.usersSize() + " countvalrec = " + countValidationRecords);
         }
 
-        private double getMu() {
-            Dictionary<string, User> users = train.UsersToItems;
-            int numOfTrainRatings = 0;
+        private double getMu(Dictionary<string, User> users) {
+            //Dictionary<string, User> users = train.UsersToItems;
+            int numOfRatings = 0;
             double muNumerator = 0;
             foreach (KeyValuePair<string, User> currentUser in users)
             {
@@ -688,11 +820,14 @@ namespace RecommenderSystem
                 foreach (KeyValuePair<string, Rating> currentItem in userRatings)
                 {
                     muNumerator += currentItem.Value.rating;
-                    numOfTrainRatings++;
+                    numOfRatings++;
                 }
             }
-            return muNumerator / numOfTrainRatings;
+            return muNumerator / numOfRatings;
             
         }
     }
+
+
+
 }
