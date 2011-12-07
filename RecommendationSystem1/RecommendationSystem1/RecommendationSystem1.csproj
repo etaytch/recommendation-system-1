@@ -50,6 +50,7 @@
     <Compile Include="Db.cs" />
     <Compile Include="User.cs" />
     <Compile Include="Rating.cs" />
+    <Compile Include="VectorDO.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ml-100k\allbut.pl" />
