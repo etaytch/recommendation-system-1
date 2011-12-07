@@ -19,6 +19,7 @@ namespace RecommenderSystem
         private Dictionary<string, double> usersWCosine;
         private List<string> usersIDs;
         private int numOfRecords;
+        private double usersMu;
 
         private const double limitEnvironmentPearson = -0.3;
         private const double limitEnvironmentCosine = 0.0;
@@ -36,6 +37,7 @@ namespace RecommenderSystem
             test = new Db();
             train = new Db();
             numOfRecords = 0;
+            usersMu = -1;
        }
 
         //load a dataset from a file
@@ -127,7 +129,7 @@ namespace RecommenderSystem
             }
             else if (sMethod.Equals("SVD")) 
             {                
-                res = getMu(usersToItems) + usersVector[sUID].getVal() + itemsVector[sUID].getVal() + multVectors(itemsVector[sIID].getVec(), usersVector[sUID].getVec());
+                res = getMu(usersToItems, "Users") + usersVector[sUID].getVal() + itemsVector[sUID].getVal() + multVectors(itemsVector[sIID].getVec(), usersVector[sUID].getVec());
             }
             return res;
         }
@@ -662,8 +664,8 @@ namespace RecommenderSystem
             //Splitting the train into train and validation DBs
             splitTrain(0.95);
 
-            double mu = this.getMu(train.UsersToItems);
-            Console.WriteLine("mu = " + getMu(train.UsersToItems));
+            double mu = this.getMu(train.UsersToItems, "Train");
+            Console.WriteLine("mu = " + getMu(train.UsersToItems, "Train"));
                        
             Random ran = new Random();
             
@@ -826,7 +828,9 @@ namespace RecommenderSystem
             //Console.WriteLine("train size = " + train.usersSize() + " validation size = " + validation.usersSize() + " countvalrec = " + countValidationRecords);
         }
 
-        private double getMu(Dictionary<string, User> users) {
+        private double getMu(Dictionary<string, User> users, String type) {
+            if (this.usersMu != -1 && type.Equals("Users")) return usersMu;
+
             //Dictionary<string, User> users = train.UsersToItems;
             int numOfRatings = 0;
             double muNumerator = 0;
@@ -839,6 +843,7 @@ namespace RecommenderSystem
                     numOfRatings++;
                 }
             }
+            if (type == "Users") this.usersMu = muNumerator / numOfRatings;
             return muNumerator / numOfRatings;
             
         }
