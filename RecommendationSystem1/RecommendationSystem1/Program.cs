@@ -44,10 +44,10 @@ namespace RecommenderSystem
             rs.TrainBaseModel(10);
             
             List<string> lMethods = new List<string>();
-            lMethods.Add("Pearson");
-            lMethods.Add("Cosine");
+            //lMethods.Add("Pearson");
+           // lMethods.Add("Cosine");
             lMethods.Add("SVD");
-            lMethods.Add("Random");
+          //  lMethods.Add("Random");
             Dictionary<string, double> dResults = rs.ComputeHitRatio(lMethods);
             Console.WriteLine("Hit ratio scores for Pearson, Cosine, and Random are:");
             foreach (KeyValuePair<string, double> p in dResults)
