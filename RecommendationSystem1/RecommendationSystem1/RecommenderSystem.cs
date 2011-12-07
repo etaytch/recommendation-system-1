@@ -596,7 +596,7 @@ namespace RecommenderSystem
         /*************************************/
 
         //Compute the RMSE of all the methods in the list for a given train-test split (e.g. 0.95 train set size)
-        public Dictionary<string, double> ComputeRMSE(List<string> lMethods)
+        public Dictionary<string, double> ComputeRMSE(List<string> lMethods, out double dConfidence)
         {
             Dictionary<string, double> res = new Dictionary<string, double>(); //the result will be stored here
             Dictionary<string, User> users = test.UsersToItems; //All the users in the test
@@ -604,28 +604,55 @@ namespace RecommenderSystem
             double pearsonNumerator = 0;
             double cosineNumerator = 0;
             double randomNumerator = 0;
+            double svdNumerator = 0;
+
+            Dictionary<string, double> rmsePearson = new Dictionary<string, double>();
+            Dictionary<string, double> rmseCosine = new Dictionary<string, double>();
+            Dictionary<string, double> rmseRandom = new Dictionary<string, double>();
+            Dictionary<string, double> rmseSVD = new Dictionary<string, double>();
 
             foreach (KeyValuePair<string, User> currentUser in users)
             {
                 Dictionary<string, Rating> userRatings = currentUser.Value.getDictionary();
+                //This vars are only for confidentiality
+                double currentUserNumeratorPearson = 0;
+                double currentUserNumeratorCosine = 0;
+                double currentUserNumeratorSVD = 0;
+                double currentUserNumeratorRandom = 0;
                 foreach (KeyValuePair<string, Rating> currentRating in userRatings)
                 {
                     if (lMethods.Contains("Pearson"))
                     {
                         pearsonNumerator += Math.Pow((currentRating.Value.rating - PredictRating("Pearson", currentUser.Key, currentRating.Key)), 2);
+                        currentUserNumeratorPearson += Math.Pow((currentRating.Value.rating - PredictRating("Pearson", currentUser.Key, currentRating.Key)), 2);
                     }
 
                     if (lMethods.Contains("Cosine"))
                     {
                         cosineNumerator += Math.Pow((currentRating.Value.rating - PredictRating("Cosine", currentUser.Key, currentRating.Key)), 2);
+                        currentUserNumeratorCosine += Math.Pow((currentRating.Value.rating - PredictRating("Cosine", currentUser.Key, currentRating.Key)), 2);
                     }
 
                     if (lMethods.Contains("Random"))
                     {
                         randomNumerator += Math.Pow((currentRating.Value.rating - PredictRating("Random", currentUser.Key, currentRating.Key)), 2);
+                        currentUserNumeratorRandom += Math.Pow((currentRating.Value.rating - PredictRating("Random", currentUser.Key, currentRating.Key)), 2);
+                    }
+
+                    if (lMethods.Contains("SVD"))
+                    {
+                        svdNumerator += Math.Pow((currentRating.Value.rating - PredictRating("SVD", currentUser.Key, currentRating.Key)), 2);
+                        currentUserNumeratorSVD += Math.Pow((currentRating.Value.rating - PredictRating("SVD", currentUser.Key, currentRating.Key)), 2);
                     }
                 }
+                //update RMSE per user
+                rmsePearson[currentUser.Key] = Math.Sqrt(currentUserNumeratorPearson / userRatings.Count);
+                rmseCosine[currentUser.Key] = Math.Sqrt(currentUserNumeratorCosine / userRatings.Count);
+                rmseRandom[currentUser.Key] = Math.Sqrt(currentUserNumeratorRandom / userRatings.Count);
+                rmseSVD[currentUser.Key] = Math.Sqrt(currentUserNumeratorSVD / userRatings.Count);
             }
+
+            //calculate couples
 
             if (lMethods.Contains("Pearson"))
             {
@@ -639,7 +666,10 @@ namespace RecommenderSystem
             {
                 res["Random"] = Math.Sqrt(randomNumerator / this.numOfRecords);
             }
-
+            if (lMethods.Contains("SVD"))
+            {
+                res["SVD"] = Math.Sqrt(svdNumerator / this.numOfRecords);
+            }
             return res;
 
         }
@@ -674,7 +704,7 @@ namespace RecommenderSystem
                 for(int i=0;i<latentFeatures;i++){
                     pu[i] = (double)(ran.Next(-500, 500)) / 10000;
                 }
-                double bu = (double)(ran.Next(-500, 500)) / 10000;
+                double bu = (double)(ran.Next(-5000, 5000)) / 100000;
                 VectorDO vecDO = new VectorDO(pu,bu);
                 usersVector[userEntry.Key] = vecDO;
             }
@@ -689,8 +719,8 @@ namespace RecommenderSystem
                 itemsVector[itemsEntry.Key] = vecDO;
             }
 
-            double y = 0.05;//(double)(ran.Next(-5, 5)) / 100;
-            double gamma = 0.05;//(double)(ran.Next(-5, 0)) / 100;
+            double y = 0.02;//(double)(ran.Next(-5, 5)) / 100;
+            double gamma = 0.002;//(double)(ran.Next(-5, 0)) / 100;
             
             double prevRMSE = ComputeValidationRMSE();
             double currentRMSE = prevRMSE;            
