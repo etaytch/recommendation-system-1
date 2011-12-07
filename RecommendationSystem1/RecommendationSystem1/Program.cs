@@ -42,7 +42,7 @@ namespace RecommenderSystem
             RecommenderSystem rs = new RecommenderSystem();
             rs.Load("MovieLens/u.data", 0.9);
             rs.TrainBaseModel(10);
-            /*
+            
             List<string> lMethods = new List<string>();
             lMethods.Add("Pearson");
             lMethods.Add("Cosine");
@@ -52,7 +52,7 @@ namespace RecommenderSystem
             Console.WriteLine("Hit ratio scores for Pearson, Cosine, and Random are:");
             foreach (KeyValuePair<string, double> p in dResults)
                 Console.Write(p.Key + "=" + Math.Round(p.Value, 4) + ", ");
-            */
+            
             Console.WriteLine("Predicted rating of user 6 to item 88 using SVD is " + Math.Round(rs.PredictRating("SVD", "6", "88"), 4));
             /*
             Dictionary<double, double> dAllPredictions = rs.PredictAllRatings("SVD", "6", "88");
