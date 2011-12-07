@@ -12,6 +12,7 @@ namespace RecommenderSystem
         private Dictionary<string, Item> itemsToUsers;
         private Db test;
         private Db train;
+        private Db validation;
         private Dictionary<string, double> usersWPearson;
         private Dictionary<string, double> usersWCosine;
         private List<string> usersIDs;
@@ -236,28 +237,6 @@ namespace RecommenderSystem
                 res["Random"] = (double)randomHits / totalRatingsCount;
             }
             return res;
-        }
-
-        //Compute the RMSE of all the methods in the list for a given train-test split (e.g. 0.95 train set size)
-        public Dictionary<string, double> ComputeRMSE(List<string> lMethods)
-        {
-            Dictionary<string, double> res = new Dictionary<string, double>(); //the result will be stored here
-            Dictionary<string, User> users = test.UsersToItems; //All the users in the test
-            
-            double numerator = 0;
-
-            foreach (KeyValuePair<string, User> currentUser in users)
-            {
-                Dictionary<string, Rating> userRatings = currentUser.Value.getDictionary();
-                foreach (KeyValuePair<string, Rating> currentRating in userRatings)
-                {
-                    numerator += Math.Pow((currentRating.Value.rating - PredictRating("Pearson", currentUser.Key, currentRating.Key)), 2);
-                }
-            }
-
-            res["Pearson"] = Math.Sqrt(numerator / this.numOfRecords);
-            return res;
-
         }
 
         //Calculates the average rating of every user and updates it.
@@ -523,7 +502,7 @@ namespace RecommenderSystem
             return res;
         }
 
-        public void splitDB(double p) {
+        private void splitDB(double p) {
             test = new Db();
             train = new Db();
             List<string> users = new List<string>(usersToItems.Keys);   // a copy of users ids            
@@ -584,6 +563,136 @@ namespace RecommenderSystem
             }
             train.calculateAvgRatings();
             test.calculateAvgRatings();
+        }
+
+        /*************************************/
+        /*********** Assignment 2 ************/
+        /*************************************/
+
+        //Compute the RMSE of all the methods in the list for a given train-test split (e.g. 0.95 train set size)
+        public Dictionary<string, double> ComputeRMSE(List<string> lMethods)
+        {
+            Dictionary<string, double> res = new Dictionary<string, double>(); //the result will be stored here
+            Dictionary<string, User> users = test.UsersToItems; //All the users in the test
+
+            double pearsonNumerator = 0;
+            double cosineNumerator = 0;
+            double randomNumerator = 0;
+
+            foreach (KeyValuePair<string, User> currentUser in users)
+            {
+                Dictionary<string, Rating> userRatings = currentUser.Value.getDictionary();
+                foreach (KeyValuePair<string, Rating> currentRating in userRatings)
+                {
+                    if (lMethods.Contains("Pearson"))
+                    {
+                        pearsonNumerator += Math.Pow((currentRating.Value.rating - PredictRating("Pearson", currentUser.Key, currentRating.Key)), 2);
+                    }
+
+                    if (lMethods.Contains("Cosine"))
+                    {
+                        cosineNumerator += Math.Pow((currentRating.Value.rating - PredictRating("Cosine", currentUser.Key, currentRating.Key)), 2);
+                    }
+
+                    if (lMethods.Contains("Random"))
+                    {
+                        randomNumerator += Math.Pow((currentRating.Value.rating - PredictRating("Random", currentUser.Key, currentRating.Key)), 2);
+                    }
+                }
+            }
+
+            if (lMethods.Contains("Pearson"))
+            {
+                res["Pearson"] = Math.Sqrt(pearsonNumerator / this.numOfRecords);
+            }
+            if (lMethods.Contains("Cosine"))
+            {
+                res["Cosine"] = Math.Sqrt(cosineNumerator / this.numOfRecords);
+            }
+            if (lMethods.Contains("Random"))
+            {
+                res["Random"] = Math.Sqrt(randomNumerator / this.numOfRecords);
+            }
+
+            return res;
+
+        }
+
+        public void TrainBaseModel(int latentFeatures)
+        {
+            //Splitting the train into train and validation DBs
+            splitTrain(0.95);
+
+            double mu = this.getMu();
+            Console.WriteLine("mu = " + getMu());
+
+        }
+
+        private void splitTrain(double p)
+        {
+            validation = new Db();
+            List<string> users = new List<string>(train.UsersToItems.Keys);   // a copy of users ids            
+            int amountOfValidationRecords = (int)((1 - p) * train.usersSize());    // size of train Db
+            int countValidationRecords = 0;                                   // counter for train Db
+            Random ran = new Random();
+            //Console.WriteLine("train size = " + train.usersSize() + " amount = " + amountOfValidationRecords);
+
+            //We assumed that on low values of P, the test size would not necessarily be the declared "amountOfTestRecords"
+            //because k is chosen randomally and we can't control it
+            while (countValidationRecords < amountOfValidationRecords && users.Count > 0)
+            {
+                // randomize the next user
+                int nextUser = ran.Next(0, users.Count);
+                string currentUserID = users.ElementAt(nextUser);
+                User currentUser = train.UsersToItems[currentUserID];
+                Dictionary<string, Rating> currentUserRatings = currentUser.getDictionary();
+
+                validation.addUser(currentUserID);
+
+
+                List<string> itemsIDs = new List<string>(currentUserRatings.Keys);        // copy of items IDs
+
+                int amountOfItems = currentUser.getDictionary().Count;                    // amount of items
+
+                int k = ran.Next(0, amountOfItems);                                       // randomize amount of items
+                k = Math.Min(k, (amountOfValidationRecords - countValidationRecords));                // to put in the train
+                // for each item - add it to the train and remove from temp item list
+                for (int i = 0; i < k; i++)
+                {
+                    int nextItem = ran.Next(0, itemsIDs.Count);
+                    string nextItemID = itemsIDs.ElementAt(nextItem);
+                    validation.addRating(currentUserID, currentUserRatings[nextItemID]);
+                    train.removeRating(currentUserID, nextItemID);
+                    itemsIDs.RemoveAt(nextItem);
+                }
+                //If all the ratings were chosen so user should be removed from train
+                if (k == amountOfItems) {
+                    train.removeUser(currentUserID);
+                }
+                countValidationRecords += k;
+
+                // remove user from temp list
+                users.RemoveAt(nextUser);
+            }
+
+            //Console.WriteLine("train size = " + train.usersSize() + " validation size = " + validation.usersSize() + " countvalrec = " + countValidationRecords);
+        }
+
+        private double getMu() {
+            Dictionary<string, User> users = train.UsersToItems;
+            int numOfTrainRatings = 0;
+            double muNumerator = 0;
+            foreach (KeyValuePair<string, User> currentUser in users)
+            {
+                Dictionary<string, Rating> userRatings = currentUser.Value.getDictionary();
+                foreach (KeyValuePair<string, Rating> currentItem in userRatings)
+                {
+                    muNumerator += currentItem.Value.rating;
+                    numOfTrainRatings++;
+                }
+            }
+            return muNumerator / numOfTrainRatings;
+            
         }
     }
 }
