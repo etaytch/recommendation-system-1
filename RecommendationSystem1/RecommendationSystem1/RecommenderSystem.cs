@@ -188,6 +188,7 @@ namespace RecommenderSystem
             int pearsonHits = 0;
             int cosineHits = 0;
             int randomHits = 0;
+            int svdHits = 0;
             int totalRatingsCount = 0;
 
             //Iterates on all the users, and then for each user iterates on all his ratings.
@@ -229,6 +230,16 @@ namespace RecommenderSystem
                             randomHits++;
                         }
                     }
+
+                    if (lMethods.Contains("SVD"))
+                    {
+                        int svdPred = 0;
+                        svdPred = (int)Math.Round(PredictRating("SVD", userEntry.Key, itemEntry.Key));
+                        if (svdPred == itemEntry.Value.rating)
+                        {
+                            svdHits++;
+                        }
+                    }
                 }
             }
 
@@ -243,6 +254,10 @@ namespace RecommenderSystem
             if (lMethods.Contains("Random"))
             {
                 res["Random"] = (double)randomHits / totalRatingsCount;
+            }
+            if (lMethods.Contains("SVD"))
+            {
+                res["SVD"] = (double)svdHits / totalRatingsCount;
             }
             return res;
         }
@@ -268,6 +283,7 @@ namespace RecommenderSystem
         private double getWeight(string method,string activeUID, string otherUID) {
             if (method.Equals("Pearson")) return getPearsonWeight(activeUID, otherUID);
             else if (method.Equals("Cosine")) return getCosineWeight(activeUID, otherUID);
+            else if (method.Equals("SVD")) return getSVDDistance(activeUID, otherUID);
             else return 0.0;
         }
 
@@ -654,9 +670,9 @@ namespace RecommenderSystem
             foreach (KeyValuePair<string, User> userEntry in usersToItems) { 
                 double[] pu = new double[latentFeatures];
                 for(int i=0;i<latentFeatures;i++){
-                    pu[i] = (double)(ran.Next(-5, 5)) / 10000;
+                    pu[i] = (double)(ran.Next(-500, 500)) / 10000;
                 }
-                double bu = (double)(ran.Next(-5, 5)) / 10000;
+                double bu = (double)(ran.Next(-500, 500)) / 10000;
                 VectorDO vecDO = new VectorDO(pu,bu);
                 usersVector[userEntry.Key] = vecDO;
             }
@@ -664,9 +680,9 @@ namespace RecommenderSystem
             foreach (KeyValuePair<string, Item> itemsEntry in itemsToUsers) { 
                 double[] qi = new double[latentFeatures];
                 for(int i=0;i<latentFeatures;i++){
-                    qi[i] = (double)(ran.Next(-5, 5)) / 10000;
+                    qi[i] = (double)(ran.Next(-500, 500)) / 10000;
                 }    
-                double bi = (double)(ran.Next(-5, 5)) / 10000;
+                double bi = (double)(ran.Next(-500, 500)) / 10000;
                 VectorDO vecDO = new VectorDO(qi,bi);
                 itemsVector[itemsEntry.Key] = vecDO;
             }
@@ -826,6 +842,20 @@ namespace RecommenderSystem
             return muNumerator / numOfRatings;
             
         }
+
+        private double getSVDDistance(string activeUID, string otherUID)
+        {
+            double[] activeVec = usersVector[activeUID].getVec();
+            double[] otherVec = usersVector[otherUID].getVec();
+            double acc = 0;
+
+            for (int i = 0; i < activeVec.Length; i++)
+            {
+                acc += Math.Pow(activeVec[i] - otherVec[i], 2);
+            }
+            return Math.Sqrt(acc);
+        }
+
     }
 
 

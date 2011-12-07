@@ -43,7 +43,18 @@ namespace RecommenderSystem
             rs.Load("MovieLens/u.data", 0.9);
             rs.TrainBaseModel(10);
             /*
+            List<string> lMethods = new List<string>();
+            lMethods.Add("Pearson");
+            lMethods.Add("Cosine");
+            lMethods.Add("SVD");
+            lMethods.Add("Random");
+            Dictionary<string, double> dResults = rs.ComputeHitRatio(lMethods);
+            Console.WriteLine("Hit ratio scores for Pearson, Cosine, and Random are:");
+            foreach (KeyValuePair<string, double> p in dResults)
+                Console.Write(p.Key + "=" + Math.Round(p.Value, 4) + ", ");
+            */
             Console.WriteLine("Predicted rating of user 6 to item 88 using SVD is " + Math.Round(rs.PredictRating("SVD", "6", "88"), 4));
+            /*
             Dictionary<double, double> dAllPredictions = rs.PredictAllRatings("SVD", "6", "88");
             Console.WriteLine("All predicted ratings of user 6 to item 88 using SVD are:");
             foreach (KeyValuePair<double, double> p in dAllPredictions)
