@@ -34,6 +34,9 @@ namespace RecommenderSystem
         public void addUser(string user_id) {
             usersToItems[user_id] = new User();
         }
+        public void removeUser(String user_id) {
+            usersToItems.Remove(user_id);
+        }
         public void addRating(string user_id,Rating rating) {
             usersToItems[user_id].addRating(rating);
             if (itemsToUsers.ContainsKey(rating.itemID)) {
@@ -46,7 +49,11 @@ namespace RecommenderSystem
                 itemsToUsers[rating.itemID] = i;                
             }
         }
-
+        public void removeRating(string user_id, string item_id)
+        {
+            usersToItems[user_id].getDictionary().Remove(item_id);
+            ItemsToUsers[item_id].getDictionary().Remove(user_id);
+        }
         private Dictionary<double, int> GetRatingsHistogram(string sUID) {
             Dictionary<double, int> hist = new Dictionary<double, int>();
             User user = usersToItems[sUID];
