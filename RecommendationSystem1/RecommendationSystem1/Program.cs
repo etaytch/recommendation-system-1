@@ -41,21 +41,11 @@ namespace RecommenderSystem
         {
             RecommenderSystem rs = new RecommenderSystem();
             rs.Load("MovieLens/u.data", 0.9);
-            rs.TrainBaseModel(10);
-            
-            List<string> lMethods = new List<string>();
-            //lMethods.Add("Pearson");
-           // lMethods.Add("Cosine");
-            lMethods.Add("SVD");
-          //  lMethods.Add("Random");
-            Dictionary<string, double> dResults = rs.ComputeHitRatio(lMethods);
-            Console.WriteLine("Hit ratio scores for Pearson, Cosine, and Random are:");
-            foreach (KeyValuePair<string, double> p in dResults)
-                Console.Write(p.Key + "=" + Math.Round(p.Value, 4) + ", ");
-            
+            rs.TrainBaseModel(10);            
+
             Console.WriteLine("Predicted rating of user 6 to item 88 using SVD is " + Math.Round(rs.PredictRating("SVD", "6", "88"), 4));
-            /*
             Dictionary<double, double> dAllPredictions = rs.PredictAllRatings("SVD", "6", "88");
+            
             Console.WriteLine("All predicted ratings of user 6 to item 88 using SVD are:");
             foreach (KeyValuePair<double, double> p in dAllPredictions)
                 Console.WriteLine(p.Key + "," + Math.Round(p.Value, 4));
@@ -66,14 +56,16 @@ namespace RecommenderSystem
             lMethods.Add("Random");
             DateTime dtStart = DateTime.Now;
             Dictionary<string, Dictionary<string, double>> dConfidence = null;
+            
             Dictionary<string, double> dResults = rs.ComputeHitRatio(lMethods, out dConfidence);
             Console.WriteLine("Hit ratio scores for Pearson, Cosine, SVD, and Random are:");
             foreach (KeyValuePair<string, double> p in dResults)
                 Console.Write(p.Key + "=" + Math.Round(p.Value, 4) + ", ");
+            
             Console.WriteLine("Confidence P-values are:");
             foreach (string sFirst in dConfidence.Keys)
                 foreach (string sSecond in dConfidence[sFirst].Keys)
-                    Console.WriteLine("p(" + sFirst + "=" + sSecond + ")=" + dConfidence[sFirst][sSecond].ToString("F3"));
+                    Console.WriteLine("p(" + sFirst + "=" + sSecond + ")=" + dConfidence[sFirst][sSecond].ToString("F3"));           
             dResults = rs.ComputeRMSE(lMethods, out dConfidence);
             Console.WriteLine("RMSE scores for Pearson, Cosine, SVD, and Random are:");
             foreach (KeyValuePair<string, double> p in dResults)
@@ -84,7 +76,7 @@ namespace RecommenderSystem
                     Console.WriteLine("p(" + sFirst + "=" + sSecond + ")=" + dConfidence[sFirst][sSecond].ToString("F3"));
             Console.WriteLine();
             Console.WriteLine("Execution time was " + Math.Round((DateTime.Now - dtStart).TotalSeconds, 0));
-             */
+             
             Console.ReadLine();
         }
 

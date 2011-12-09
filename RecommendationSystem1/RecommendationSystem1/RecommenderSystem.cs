@@ -21,7 +21,7 @@ namespace RecommenderSystem
         private int numOfRecords;
         private double usersMu;
 
-        private const double limitEnvironmentPearson = -0.3;
+        private const double limitEnvironmentPearson = -0.3;//0.0
         private const double limitEnvironmentCosine = 0.0;
 
         public RecommenderSystem()
@@ -94,14 +94,15 @@ namespace RecommenderSystem
         //return an existing rating 
         public double GetRating(string sUID, string sIID)
         {
-            User u = usersToItems[sUID];
+            User u = train.UsersToItems[sUID];
             return u.getRating(sIID).rating;
         }
         //return an histogram of all ratings that the user has used
-        public Dictionary<double, int> GetRatingsHistogram(string sUID)
+        public Dictionary<double, int> GetRatingsHistogram(Dictionary<string, User> users,string sUID)
         {
             Dictionary<double, int> hist = new Dictionary<double, int>();
-            User user = usersToItems[sUID];
+            //User user = train.UsersToItems[sUID];
+            User user = users[sUID];
             foreach (KeyValuePair<string, Rating> entry in user.getDictionary()) {
                 if (hist.ContainsKey(entry.Value.rating)) {
                     hist[entry.Value.rating]++;
@@ -128,8 +129,9 @@ namespace RecommenderSystem
                 res = generateRandomRating(sUID);
             }
             else if (sMethod.Equals("SVD")) 
-            {                
-                res = getMu(usersToItems, "Users") + usersVector[sUID].getVal() + itemsVector[sUID].getVal() + multVectors(itemsVector[sIID].getVec(), usersVector[sUID].getVec());
+            {
+                //res = getMu(train.UsersToItems, /*Users*/"Train") + usersVector[sUID].getVal() + itemsVector[sUID].getVal() + multVectors(itemsVector[sIID].getVec(), usersVector[sUID].getVec());
+                res = getMu(train.UsersToItems, /*Users*/"Train") + usersVector[sUID].getVal() + (itemsVector.ContainsKey(sUID) ? itemsVector[sUID].getVal() : 0.0) + (itemsVector.ContainsKey(sIID) ? multVectors(itemsVector[sIID].getVec(), usersVector[sUID].getVec()) : 0.0);
             }
             return res;
         }
@@ -139,7 +141,7 @@ namespace RecommenderSystem
             int k = 500;     // some random environment value
             Dictionary<double, double> ans = new Dictionary<double, double>();  // will store the answer
             Dictionary<double, List<string>> weightUsers = new Dictionary<double, List<string>>();  // maps calculated weight to list of users
-            Item item = itemsToUsers[sIID];     // given Item
+            Item item = train.ItemsToUsers[sIID];     // given Item
             Dictionary<string, Rating> usersRating = item.getDictionary();      // users who rates the Item
 
             // for each user who rated the item, calculate the Wau and store them in the weightUsers Dictionary
@@ -181,15 +183,21 @@ namespace RecommenderSystem
 
 
         //Compute the hit ratio of all the methods in the list for a given train-test split (e.g. 0.95 train set size)
-        public Dictionary<string,double> ComputeHitRatio(List<string> lMethods)
+        public Dictionary<string,double> ComputeHitRatio(List<string> lMethods, out Dictionary<string, Dictionary<string, double>> dConfidence)
         {
             Dictionary<string, double> res = new Dictionary<string, double>(); //the result will be stored here
-
+            dConfidence = new Dictionary<string, Dictionary<string, double>>();            
             Dictionary<string, User> users = test.UsersToItems; //All the users in the test
 
-            int pearsonHits = 0;
-            int cosineHits = 0;
-            int randomHits = 0;
+            Dictionary<string, Dictionary<string, double>> methodToHitRatio = new Dictionary<string, Dictionary<string, double>>();
+            foreach (String method in lMethods) {
+                methodToHitRatio.Add(method, new Dictionary<string, double>());
+            }
+            
+            
+            int pearsonHits = 0;            
+            int cosineHits = 0;            
+            int randomHits = 0;            
             int svdHits = 0;
             int totalRatingsCount = 0;
 
@@ -198,6 +206,11 @@ namespace RecommenderSystem
             foreach (KeyValuePair<string, User> userEntry in users)
             {
                 Dictionary<string, Rating> itemsOfUser = userEntry.Value.getDictionary();
+                int currentUserPearsonHits = 0;
+                int currentUserCosineHits = 0;
+                int currentUserRandomHits = 0;
+                int currentUserSvdHits = 0;
+
                 foreach (KeyValuePair<string, Rating> itemEntry in itemsOfUser)
                 {
 
@@ -210,6 +223,7 @@ namespace RecommenderSystem
                         if (pearsonPred == itemEntry.Value.rating)
                         {
                             pearsonHits++;
+                            currentUserPearsonHits++;                            
                         }
                     }
 
@@ -220,6 +234,7 @@ namespace RecommenderSystem
                         if (cosinePred == itemEntry.Value.rating)
                         {
                             cosineHits++;
+                            currentUserCosineHits++;                            
                         }
                     }
 
@@ -230,6 +245,7 @@ namespace RecommenderSystem
                         if (randomPred == itemEntry.Value.rating)
                         {
                             randomHits++;
+                            currentUserRandomHits++;                            
                         }
                     }
 
@@ -240,10 +256,18 @@ namespace RecommenderSystem
                         if (svdPred == itemEntry.Value.rating)
                         {
                             svdHits++;
+                            currentUserSvdHits++;
                         }
                     }
                 }
+                methodToHitRatio["Pearson"][userEntry.Key] = Math.Sqrt((double)currentUserPearsonHits / itemsOfUser.Count);
+                methodToHitRatio["Cosine"][userEntry.Key] = Math.Sqrt((double)currentUserCosineHits / itemsOfUser.Count);
+                methodToHitRatio["Random"][userEntry.Key] = Math.Sqrt((double)currentUserRandomHits / itemsOfUser.Count);
+                methodToHitRatio["SVD"][userEntry.Key] = Math.Sqrt((double)currentUserSvdHits / itemsOfUser.Count);
+
             }
+
+            calcSignTest("Hit",methodToHitRatio, lMethods, out dConfidence, users);  
 
             if(lMethods.Contains("Pearson"))
             {
@@ -272,7 +296,7 @@ namespace RecommenderSystem
                 if (userEntry.Value.getAverageRating() != -1) continue;
                 double mone = 0.0;
                 int counter = 0;
-                Dictionary<double, int> hist = GetRatingsHistogram(userEntry.Key);
+                Dictionary<double, int> hist = GetRatingsHistogram(usersToItems,userEntry.Key);
                 foreach (KeyValuePair<double, int> histEntry in hist)
                 {
                     mone += histEntry.Key * histEntry.Value;
@@ -304,10 +328,10 @@ namespace RecommenderSystem
         // Calculates PearsonWeight for Active user and Other user
         private double calcPearsonWeight(string activeUID, string otherUID) {
             
-            Dictionary<string, Rating> activeItems = usersToItems[activeUID].getDictionary();
-            Dictionary<string, Rating> otherItems = usersToItems[otherUID].getDictionary();
-            double activeAverageRating = usersToItems[activeUID].getAverageRating();
-            double otherAverageRating = usersToItems[otherUID].getAverageRating();
+            Dictionary<string, Rating> activeItems = train.UsersToItems[activeUID].getDictionary();
+            Dictionary<string, Rating> otherItems = train.UsersToItems[otherUID].getDictionary();
+            double activeAverageRating = train.UsersToItems[activeUID].getAverageRating();
+            double otherAverageRating = train.UsersToItems[otherUID].getAverageRating();
 
             double numerator = 0.0;
             double denomanator1 = 0.0;
@@ -348,7 +372,10 @@ namespace RecommenderSystem
         private double pearson(string sUID, string sII) {
             double numerator = 0.0;
             double denomanator = 0.0;
-            Dictionary<string, Rating> currentItemUsers = itemsToUsers[sII].getDictionary();
+            if (!train.ItemsToUsers.ContainsKey(sII)) {
+                return 0.0;
+            }
+            Dictionary<string, Rating> currentItemUsers = train.ItemsToUsers[sII].getDictionary();
             foreach (KeyValuePair<string, Rating> userEntry in currentItemUsers) {
                 if (sUID.Equals(userEntry.Key)) continue;
                 double Wau = getPearsonWeight(sUID, userEntry.Key);
@@ -367,7 +394,10 @@ namespace RecommenderSystem
         private double cosine(string sUID, string sII) {            
             double numerator = 0.0;
             double denomanator = 0.0;
-            Dictionary<string, Rating> currentItemUsers = itemsToUsers[sII].getDictionary();
+            if (!train.ItemsToUsers.ContainsKey(sII)) {
+                return 0.0;
+            }
+            Dictionary<string, Rating> currentItemUsers = train.ItemsToUsers[sII].getDictionary();
             foreach (KeyValuePair<string, Rating> userEntry in currentItemUsers) {
                 if (sUID.Equals(userEntry.Key)) continue;
                 double Wau = getCosineWeight(sUID, userEntry.Key);
@@ -399,10 +429,10 @@ namespace RecommenderSystem
         private double calcCosineWeightFirstFormula(string activeUID, string otherUID)
         {
 
-            Dictionary<string, Rating> activeItems = usersToItems[activeUID].getDictionary();
-            Dictionary<string, Rating> otherItems = usersToItems[otherUID].getDictionary();
-            double activeAverageRating = usersToItems[activeUID].getAverageRating();
-            double otherAverageRating = usersToItems[otherUID].getAverageRating();
+            Dictionary<string, Rating> activeItems = train.UsersToItems[activeUID].getDictionary();
+            Dictionary<string, Rating> otherItems = train.UsersToItems[otherUID].getDictionary();
+            double activeAverageRating = train.UsersToItems[activeUID].getAverageRating();
+            double otherAverageRating = train.UsersToItems[otherUID].getAverageRating();
 
             double numerator = 0.0;
             double denomanator1 = 0.0;
@@ -443,10 +473,10 @@ namespace RecommenderSystem
 
         // Calculates CosineWeight for Active user and Other user with the second formula
         private double calcCosineWeightSecondFormula(string activeUID, string otherUID) {
-            Dictionary<string, Rating> activeItems = usersToItems[activeUID].getDictionary();
-            Dictionary<string, Rating> otherItems = usersToItems[otherUID].getDictionary();
-            double activeAverageRating = usersToItems[activeUID].getAverageRating();
-            double otherAverageRating = usersToItems[otherUID].getAverageRating();
+            Dictionary<string, Rating> activeItems = train.UsersToItems[activeUID].getDictionary();
+            Dictionary<string, Rating> otherItems = train.UsersToItems[otherUID].getDictionary();
+            double activeAverageRating = train.UsersToItems[activeUID].getAverageRating();
+            double otherAverageRating = train.UsersToItems[otherUID].getAverageRating();
 
             double numerator = 0.0;
             double denomanator1 = 0.0;
@@ -487,7 +517,7 @@ namespace RecommenderSystem
 
             double wau;
             // avoids division by zero
-            if ((denomanator1 == 0.0) || (denomanator2 == 0.0)) {
+            if ((denomanator1 == 0.0) || (numerator.CompareTo(Double.NaN)==0) || (denomanator2 == 0.0)) {
                 wau = 0.0;
             }
             else {
@@ -505,7 +535,7 @@ namespace RecommenderSystem
         {
             double res = 0;
             double totalRates = 0;
-            Dictionary<double, int> userRates = GetRatingsHistogram(UID);
+            Dictionary<double, int> userRates = GetRatingsHistogram(train.UsersToItems,UID);
             foreach (KeyValuePair<double, int> currentRate in userRates)
             {
                 totalRates += currentRate.Value;
@@ -595,9 +625,86 @@ namespace RecommenderSystem
         /*********** Assignment 2 ************/
         /*************************************/
 
+
+        public void calcSignTest(string type,Dictionary<string, Dictionary<string, double>> scores, List<string> lMethods, 
+            out Dictionary<string, Dictionary<string, double>> dConfidence, Dictionary<string, User> users) {
+            dConfidence = new Dictionary<string, Dictionary<string, double>>();
+            foreach (String method1 in lMethods) {
+                foreach (String method2 in lMethods) {
+                    if (method1.Equals(method2)) continue;
+                    if (dConfidence.ContainsKey(method1)) {
+                        if (dConfidence[method1].ContainsKey(method2)) {
+                            continue;
+                        }
+                    }
+                    
+                    if (dConfidence.ContainsKey(method2)) {
+                        if (dConfidence[method2].ContainsKey(method1)) {
+                            continue;
+                        }
+                    }
+                    
+                    double nMethod1 = 0;
+                    double nMethod2 = 0;
+                    foreach (KeyValuePair<string, User> currentUser in users) {
+                        if (scores[method1][currentUser.Key] < scores[method2][currentUser.Key]) {
+                            if (type.Equals("RMSE")) {
+                                nMethod1 += 1;
+                            }
+                            else {
+                                nMethod2 += 1;
+                            }
+                        }
+                        else if (scores[method1][currentUser.Key] == scores[method2][currentUser.Key]) {
+                            nMethod1 += 0.5;
+                            nMethod2 += 0.5;
+                        }
+                        else {                            
+                            if (type.Equals("RMSE")) {                                
+                                nMethod2 += 1;
+                            }
+                            else {
+                                nMethod1 += 1;
+                            }
+                        }
+                    }
+                    //int nA = (int)Math.Max(nMethod1, nMethod2);
+                    //int nB = (int)Math.Min(nMethod1, nMethod2);
+                    int nA = (int)nMethod1;
+                    int nB = (int)nMethod2;
+                    //Console.WriteLine("Method1: " + method1 + ", nA: " + nA + " | Method2: " + method2 + ", nB: " + nB);                    
+
+                    double p = pValue(nA, nB);
+                    if (nA == (int)nMethod1) {
+                        //dConfidence[method1][method2] = p;
+                        if (dConfidence.ContainsKey(method1)) {
+                            dConfidence[method1].Add(method2, p);
+                        }
+                        else {
+                            Dictionary<string, double> dict = new Dictionary<string, double>();
+                            dict.Add(method2, p);
+                            dConfidence.Add(method1, dict);
+                        }
+                    }
+                    else {
+                        //dConfidence[method2][method1] = p;
+                        if (dConfidence.ContainsKey(method2)) {
+                            dConfidence[method2].Add(method1, p);
+                        }
+                        else {
+                            Dictionary<string, double> dict = new Dictionary<string, double>();
+                            dict.Add(method1, p);
+                            dConfidence.Add(method2, dict);
+                        }
+                    }
+                }
+            }
+        }
+
         //Compute the RMSE of all the methods in the list for a given train-test split (e.g. 0.95 train set size)
-        public Dictionary<string, double> ComputeRMSE(List<string> lMethods, out double dConfidence)
-        {
+        public Dictionary<string, double> ComputeRMSE(List<string> lMethods, out Dictionary<string, Dictionary<string, double>> dConfidence)
+        {            
+            
             Dictionary<string, double> res = new Dictionary<string, double>(); //the result will be stored here
             Dictionary<string, User> users = test.UsersToItems; //All the users in the test
 
@@ -606,11 +713,13 @@ namespace RecommenderSystem
             double randomNumerator = 0;
             double svdNumerator = 0;
 
-            Dictionary<string, double> rmsePearson = new Dictionary<string, double>();
-            Dictionary<string, double> rmseCosine = new Dictionary<string, double>();
-            Dictionary<string, double> rmseRandom = new Dictionary<string, double>();
-            Dictionary<string, double> rmseSVD = new Dictionary<string, double>();
-
+            Dictionary<string, Dictionary<string, double>> methodToRMSE = new Dictionary<string, Dictionary<string, double>>();
+            foreach (String method in lMethods)
+            {
+                methodToRMSE.Add(method, new Dictionary<string, double>());
+            }
+            
+            
             foreach (KeyValuePair<string, User> currentUser in users)
             {
                 Dictionary<string, Rating> userRatings = currentUser.Value.getDictionary();
@@ -619,40 +728,47 @@ namespace RecommenderSystem
                 double currentUserNumeratorCosine = 0;
                 double currentUserNumeratorSVD = 0;
                 double currentUserNumeratorRandom = 0;
+                double tmpVal = 0;
                 foreach (KeyValuePair<string, Rating> currentRating in userRatings)
                 {
                     if (lMethods.Contains("Pearson"))
                     {
-                        pearsonNumerator += Math.Pow((currentRating.Value.rating - PredictRating("Pearson", currentUser.Key, currentRating.Key)), 2);
-                        currentUserNumeratorPearson += Math.Pow((currentRating.Value.rating - PredictRating("Pearson", currentUser.Key, currentRating.Key)), 2);
+                        tmpVal = Math.Pow((currentRating.Value.rating - PredictRating("Pearson", currentUser.Key, currentRating.Key)), 2);                                 
+                        pearsonNumerator += tmpVal;
+                        currentUserNumeratorPearson += tmpVal;
                     }
 
                     if (lMethods.Contains("Cosine"))
                     {
-                        cosineNumerator += Math.Pow((currentRating.Value.rating - PredictRating("Cosine", currentUser.Key, currentRating.Key)), 2);
-                        currentUserNumeratorCosine += Math.Pow((currentRating.Value.rating - PredictRating("Cosine", currentUser.Key, currentRating.Key)), 2);
+                        tmpVal = Math.Pow((currentRating.Value.rating - PredictRating("Cosine", currentUser.Key, currentRating.Key)), 2);
+                        cosineNumerator += tmpVal;
+                        currentUserNumeratorCosine += tmpVal;
+                        //Console.WriteLine("currentUserNumeratorCosine: " + currentUserNumeratorCosine + ", currentRating.Value.rating: " + currentRating.Value.rating + ", Predict: " + PredictRating("Cosine", currentUser.Key, currentRating.Key) + ", Math.pow: " + Math.Pow((currentRating.Value.rating - PredictRating("Cosine", currentUser.Key, currentRating.Key)), 2));
                     }
 
                     if (lMethods.Contains("Random"))
                     {
-                        randomNumerator += Math.Pow((currentRating.Value.rating - PredictRating("Random", currentUser.Key, currentRating.Key)), 2);
-                        currentUserNumeratorRandom += Math.Pow((currentRating.Value.rating - PredictRating("Random", currentUser.Key, currentRating.Key)), 2);
+                        tmpVal = Math.Pow((currentRating.Value.rating - PredictRating("Random", currentUser.Key, currentRating.Key)), 2);
+                        randomNumerator += tmpVal;
+                        currentUserNumeratorRandom += tmpVal;
                     }
 
                     if (lMethods.Contains("SVD"))
                     {
-                        svdNumerator += Math.Pow((currentRating.Value.rating - PredictRating("SVD", currentUser.Key, currentRating.Key)), 2);
-                        currentUserNumeratorSVD += Math.Pow((currentRating.Value.rating - PredictRating("SVD", currentUser.Key, currentRating.Key)), 2);
+                        tmpVal = Math.Pow((currentRating.Value.rating - PredictRating("SVD", currentUser.Key, currentRating.Key)), 2);
+                        svdNumerator += tmpVal;
+                        currentUserNumeratorSVD += tmpVal;
                     }
                 }
-                //update RMSE per user
-                rmsePearson[currentUser.Key] = Math.Sqrt(currentUserNumeratorPearson / userRatings.Count);
-                rmseCosine[currentUser.Key] = Math.Sqrt(currentUserNumeratorCosine / userRatings.Count);
-                rmseRandom[currentUser.Key] = Math.Sqrt(currentUserNumeratorRandom / userRatings.Count);
-                rmseSVD[currentUser.Key] = Math.Sqrt(currentUserNumeratorSVD / userRatings.Count);
+                //update RMSE per user                
+                methodToRMSE["Pearson"][currentUser.Key] = Math.Sqrt(currentUserNumeratorPearson / userRatings.Count);
+                //Console.WriteLine("val:" + Math.Sqrt(currentUserNumeratorCosine / userRatings.Count) + ", userRatings.Count: " + userRatings.Count + ", currentUserNumeratorCosine: " + currentUserNumeratorCosine);
+                methodToRMSE["Cosine"][currentUser.Key] = Math.Sqrt(currentUserNumeratorCosine / userRatings.Count);                
+                methodToRMSE["Random"][currentUser.Key] = Math.Sqrt(currentUserNumeratorRandom / userRatings.Count);                
+                methodToRMSE["SVD"][currentUser.Key] = Math.Sqrt(currentUserNumeratorSVD / userRatings.Count);                
             }
-
-            //calculate couples
+                   
+            calcSignTest("RMSE",methodToRMSE, lMethods, out dConfidence, users);           
 
             if (lMethods.Contains("Pearson"))
             {
@@ -672,6 +788,55 @@ namespace RecommenderSystem
             }
             return res;
 
+        }
+
+        private double nCk(double nFact,int n, int k) {
+            // Using the following equvilance
+            // n C r = n! /[ (n-k)! * k!]
+            // log (nCr) = log(n!) - log((n-k)!) - log(k!)
+            // and log(x!) = log(x)+log(x-1)+..+log(1)           
+
+            double nMinusKFact = 0.0;
+            for (int i = 1; i <= (n-k); i++) {
+                nMinusKFact += Math.Log(i, 2);
+            }
+
+            double kFact = 0.0;
+            for (int i = 1; i <= k; i++) {
+                kFact += Math.Log(i, 2);
+            }
+            double ans = Math.Pow(2, nFact - nMinusKFact - kFact);
+            return ans;
+        }
+
+        private double pValue(int nA,int nB){
+            // Using the following equvilance
+            // n C r = n! /[ (n-k)! * k!]
+            // log (nCr) = log(n!) - log((n-k)!) - log(k!)
+            // and log(x!) = log(x)+log(x-1)+..+log(1)
+            double acc = 0.0;
+            double nFact = 0.0;
+            for (int i = 1; i <= (nA + nB); i++) {
+                nFact += Math.Log(i, 2);
+            }
+            for (int k = nA; k <= (nA + nB);k++ ) {
+                double tmp=nCk(nFact,(nA + nB), k);
+                //Console.WriteLine("k=" + k + ", n=" + (nA + nB) + ", nCk(nFact,(nA + nB), k): "+tmp);
+                acc += tmp;
+            }            
+            return Math.Pow(0.5,nA+nB)*acc;
+        }
+
+        public double testNCK(int n, int k) {
+            double acc = 0.0;
+            double nFact = 0.0;
+            for (int i = 1; i <= n; i++) {
+                nFact += Math.Log(i, 2);
+            }
+            //for (int k = nA; k <= (nA + nB); k++) {
+                acc += nCk(nFact, n, k);
+            //}        
+                return acc;
         }
 
         private double ComputeValidationRMSE() {
@@ -695,11 +860,11 @@ namespace RecommenderSystem
             splitTrain(0.95);
 
             double mu = this.getMu(train.UsersToItems, "Train");
-            Console.WriteLine("mu = " + getMu(train.UsersToItems, "Train"));
+            //Console.WriteLine("mu = " + getMu(train.UsersToItems, "Train"));
                        
             Random ran = new Random();
-            
-            foreach (KeyValuePair<string, User> userEntry in usersToItems) { 
+
+            foreach (KeyValuePair<string, User> userEntry in train.UsersToItems) { 
                 double[] pu = new double[latentFeatures];
                 for(int i=0;i<latentFeatures;i++){
                     pu[i] = (double)(ran.Next(-500, 500)) / 10000;
@@ -709,7 +874,7 @@ namespace RecommenderSystem
                 usersVector[userEntry.Key] = vecDO;
             }
 
-            foreach (KeyValuePair<string, Item> itemsEntry in itemsToUsers) { 
+            foreach (KeyValuePair<string, Item> itemsEntry in train.ItemsToUsers) { 
                 double[] qi = new double[latentFeatures];
                 for(int i=0;i<latentFeatures;i++){
                     qi[i] = (double)(ran.Next(-500, 500)) / 10000;
@@ -859,7 +1024,7 @@ namespace RecommenderSystem
         }
 
         private double getMu(Dictionary<string, User> users, String type) {
-            if (this.usersMu != -1 && type.Equals("Users")) return usersMu;
+            if (this.usersMu != -1 && type.Equals(/*"Users"*/"Train")) return usersMu;
 
             //Dictionary<string, User> users = train.UsersToItems;
             int numOfRatings = 0;
@@ -873,7 +1038,7 @@ namespace RecommenderSystem
                     numOfRatings++;
                 }
             }
-            if (type == "Users") this.usersMu = muNumerator / numOfRatings;
+            if (type == /*"Users"*/"Train") this.usersMu = muNumerator / numOfRatings;
             return muNumerator / numOfRatings;
             
         }
