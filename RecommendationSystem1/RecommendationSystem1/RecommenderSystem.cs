@@ -869,7 +869,7 @@ namespace RecommenderSystem
                 for(int i=0;i<latentFeatures;i++){
                     pu[i] = (double)(ran.Next(-500, 500)) / 10000;
                 }
-                double bu = (double)(ran.Next(-5000, 5000)) / 100000;
+                double bu = (double)(ran.Next(-500, 500)) / 100000;
                 VectorDO vecDO = new VectorDO(pu,bu);
                 usersVector[userEntry.Key] = vecDO;
             }
@@ -884,8 +884,8 @@ namespace RecommenderSystem
                 itemsVector[itemsEntry.Key] = vecDO;
             }
 
-            double y = 0.02;//(double)(ran.Next(-5, 5)) / 100;
-            double gamma = 0.002;//(double)(ran.Next(-5, 0)) / 100;
+            double y = (double)(ran.Next(0, 500)) / 10000;
+            double gamma = (double)(ran.Next(0, 500)) / 10000;
             
             double prevRMSE = ComputeValidationRMSE();
             double currentRMSE = prevRMSE;            
