@@ -45,6 +45,7 @@ namespace RecommenderSystem
             }
             else{
                 Item i = new Item();
+                i.ItemID = rating.itemID;
                 i.addRating(rating);
                 itemsToUsers[rating.itemID] = i;                
             }
