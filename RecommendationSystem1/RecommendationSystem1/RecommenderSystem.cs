@@ -27,7 +27,7 @@ namespace RecommenderSystem
 
         public RecommenderSystem()
         {
-            recAlg = new RecommenderAlgorithms();
+            recAlg = new RecommenderAlgorithms(this);
             usersToItems = new Dictionary<string, User>();
             usersVector = new Dictionary<string, VectorDO>();
             itemsToUsers = new Dictionary<string, Item>();
@@ -626,7 +626,11 @@ namespace RecommenderSystem
             List<String> res = null;
             if (sAlgorithm.Equals("Popularity"))
             {
-                res = recAlg.recommendPopularity(sUserId, cRecommendations, train.ItemsToUsers);
+                res = recAlg.recommendPopularity(sUserId, cRecommendations, itemsToUsers);
+            }
+
+            if (sAlgorithm.Equals("Cosine") || sAlgorithm.Equals("Pearson") || sAlgorithm.Equals("SVD")) {
+                res = recAlg.recommendPrediction(sUserId, cRecommendations, sAlgorithm, itemsToUsers);
             }
 
             return res;
