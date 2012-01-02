@@ -657,13 +657,21 @@ namespace RecommenderSystem
                     int tp = 0;
                     int fp = 0;
                     int fn = 0;
-                    double precision=0.0;
-                    double recall = 0.0;
-
+                    double userPrecision=0.0;
+                    double userRecall = 0.0;
+                    double totalPrecision = 0.0;
+                    double totalRecall = 0.0;
+                    int amountOfTestUsers = 0;
 
                     foreach (KeyValuePair<string, User> currentUser in test.UsersToItems) {
-                        string uid = currentUser.Key;                        
+                        string uid = currentUser.Key;
                         Dictionary<string, Rating> testItems = currentUser.Value.getDictionary();
+                        Console.WriteLine("User: " + uid + ", items in test: " + testItems.Count+", items in train: "+train.UsersToItems[uid].getDictionary().Count);
+                        if (testItems.Count > train.UsersToItems[uid].getDictionary().Count) {
+                            continue;
+                        }
+                        amountOfTestUsers++;                   
+                        
                         List<string> recommendations = Recommend(algo, uid, length);
 
                         foreach (string recomItem in recommendations){
@@ -682,20 +690,26 @@ namespace RecommenderSystem
                             }                            
                         }
                         if (tp + fp == 0) {
-                            precision = 0.0;
+                            userPrecision = 0.0;
                         }
                         else {
-                            precision = tp / (tp + fp);
+                            userPrecision = tp / (tp + fp);
                         }
                         if (tp + fn == 0) {
-                            recall = 0.0;
+                            userRecall = 0.0;
                         }
                         else {
-                            recall = tp / (tp + fn);
+                            userRecall = tp / (tp + fn);
                         }
 
-                        //ans[length]
+                        totalPrecision += userPrecision;
+                        totalRecall += userRecall;
+
+                        
                     }
+                    ans[length].Add(algo,new Dictionary<string,double>());
+                    ans[length][algo]["Precision"] = totalPrecision / amountOfTestUsers;
+                    ans[length][algo]["Recall"] = totalPrecision / amountOfTestUsers;
                 }
                 
             }
