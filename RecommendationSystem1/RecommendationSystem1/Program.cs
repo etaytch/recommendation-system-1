@@ -91,18 +91,18 @@ namespace RecommenderSystem
 
             List<string> lMethods = new List<string>();
             lMethods.Add("Pearson");
-            lMethods.Add("Cosine");
-            lMethods.Add("SVD");
-            lMethods.Add("NNPearson");
-            lMethods.Add("NNCosine");
-            lMethods.Add("NNSVD");
-            lMethods.Add("CP");
-            lMethods.Add("Popularity");
+            //lMethods.Add("Cosine");
+            //lMethods.Add("SVD");
+            //lMethods.Add("NNPearson");
+            //lMethods.Add("NNCosine");
+            //lMethods.Add("NNSVD");
+            //lMethods.Add("CP");
+            //lMethods.Add("Popularity");
             List<int> lLengths = new List<int>();
-            lLengths.Add(1);
-            lLengths.Add(3);
-            lLengths.Add(5);
-            lLengths.Add(10);
+            //lLengths.Add(1);
+            //lLengths.Add(3);
+            //lLengths.Add(5);
+            //lLengths.Add(10);
             lLengths.Add(20);
 
             DateTime dtStart = DateTime.Now;

@@ -38,7 +38,7 @@ namespace RecommenderSystem
                 itemInd++;
             }
 
-            Console.WriteLine("calculating popularity recs");
+            //Console.WriteLine("calculating popularity recs");
             return lRecommendations;
         }
 
