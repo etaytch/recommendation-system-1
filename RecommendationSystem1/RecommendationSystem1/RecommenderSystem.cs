@@ -637,7 +637,10 @@ namespace RecommenderSystem
                 res = recAlg.recommendWeights(sUserId, cRecommendations, sAlgorithm.Substring(2), train.UsersToItems);
             }
 
-
+            if (sAlgorithm.Equals("CP"))
+            {
+                res = recAlg.recommendCP(sUserId, cRecommendations, train.UsersToItems, train.ItemsToUsers);
+            }
 
             return res;
         }
@@ -666,7 +669,7 @@ namespace RecommenderSystem
                     foreach (KeyValuePair<string, User> currentUser in test.UsersToItems) {
                         string uid = currentUser.Key;
                         Dictionary<string, Rating> testItems = currentUser.Value.getDictionary();
-                        //Console.WriteLine("User: " + uid + ", items in test: " + testItems.Count+", items in train: "+train.UsersToItems[uid].getDictionary().Count);
+
                         if (testItems.Count > train.UsersToItems[uid].getDictionary().Count) {
                             continue;
                         }
