@@ -626,15 +626,15 @@ namespace RecommenderSystem
             List<String> res = null;
             if (sAlgorithm.Equals("Popularity"))
             {
-                res = recAlg.recommendPopularity(sUserId, cRecommendations, itemsToUsers);
+                res = recAlg.recommendPopularity(sUserId, cRecommendations, train.ItemsToUsers);
             }
 
             if (sAlgorithm.Equals("Cosine") || sAlgorithm.Equals("Pearson") || sAlgorithm.Equals("SVD")) {
-                res = recAlg.recommendPrediction(sUserId, cRecommendations, sAlgorithm, itemsToUsers);
+                res = recAlg.recommendPrediction(sUserId, cRecommendations, sAlgorithm, train.ItemsToUsers);
             }
 
-            if (sAlgorithm.Equals("NNCosine") || sAlgorithm.Equals("NNPearson") || sAlgorithm.Equals("NNSVD")) {                
-                res = recAlg.recommendWeights(sUserId, cRecommendations, sAlgorithm.Substring(2), usersToItems);
+            if (sAlgorithm.Equals("NNCosine") || sAlgorithm.Equals("NNPearson") || sAlgorithm.Equals("NNSVD")) {
+                res = recAlg.recommendWeights(sUserId, cRecommendations, sAlgorithm.Substring(2), train.UsersToItems);
             }
 
 
@@ -666,7 +666,7 @@ namespace RecommenderSystem
                     foreach (KeyValuePair<string, User> currentUser in test.UsersToItems) {
                         string uid = currentUser.Key;
                         Dictionary<string, Rating> testItems = currentUser.Value.getDictionary();
-                        Console.WriteLine("User: " + uid + ", items in test: " + testItems.Count+", items in train: "+train.UsersToItems[uid].getDictionary().Count);
+                        //Console.WriteLine("User: " + uid + ", items in test: " + testItems.Count+", items in train: "+train.UsersToItems[uid].getDictionary().Count);
                         if (testItems.Count > train.UsersToItems[uid].getDictionary().Count) {
                             continue;
                         }
@@ -693,13 +693,13 @@ namespace RecommenderSystem
                             userPrecision = 0.0;
                         }
                         else {
-                            userPrecision = tp / (tp + fp);
+                            userPrecision = (double)tp / (tp + fp);
                         }
                         if (tp + fn == 0) {
                             userRecall = 0.0;
                         }
                         else {
-                            userRecall = tp / (tp + fn);
+                            userRecall = (double)tp / (tp + fn);
                         }
 
                         totalPrecision += userPrecision;
@@ -709,7 +709,7 @@ namespace RecommenderSystem
                     }
                     ans[length].Add(algo,new Dictionary<string,double>());
                     ans[length][algo]["Precision"] = totalPrecision / amountOfTestUsers;
-                    ans[length][algo]["Recall"] = totalPrecision / amountOfTestUsers;
+                    ans[length][algo]["Recall"] = totalRecall / amountOfTestUsers;
                 }
                 
             }
