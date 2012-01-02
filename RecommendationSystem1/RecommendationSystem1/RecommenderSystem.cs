@@ -633,13 +633,75 @@ namespace RecommenderSystem
                 res = recAlg.recommendPrediction(sUserId, cRecommendations, sAlgorithm, itemsToUsers);
             }
 
+            if (sAlgorithm.Equals("NNCosine") || sAlgorithm.Equals("NNPearson") || sAlgorithm.Equals("NNSVD")) {                
+                res = recAlg.recommendWeights(sUserId, cRecommendations, sAlgorithm.Substring(2), usersToItems);
+            }
+
+
+
             return res;
         }
+        
 
         public Dictionary<int, Dictionary<string, Dictionary<string, double>>> ComputePrecisionRecall(List<string> lMethods, List<int> lLengths)
         {
-            //throw new NotImplementedException();
-            return null;
+            Dictionary<int, Dictionary<string, Dictionary<string, double>>> ans = new Dictionary<int, Dictionary<string, Dictionary<string, double>>>();
+
+            foreach(int len in lLengths){
+                ans[len] = new Dictionary<string, Dictionary<string, double>>();
+            }
+
+            foreach (int length in lLengths) {
+                foreach (string algo in lMethods){
+
+                    int tp = 0;
+                    int fp = 0;
+                    int fn = 0;
+                    double precision=0.0;
+                    double recall = 0.0;
+
+
+                    foreach (KeyValuePair<string, User> currentUser in test.UsersToItems) {
+                        string uid = currentUser.Key;                        
+                        Dictionary<string, Rating> testItems = currentUser.Value.getDictionary();
+                        List<string> recommendations = Recommend(algo, uid, length);
+
+                        foreach (string recomItem in recommendations){
+                            if (testItems.Keys.Contains(recomItem)) {
+                                tp++;
+                            }
+                            else {
+                                fp++;                            
+                            }
+                        }
+
+                        foreach (KeyValuePair<string,Rating> hidenItem in testItems) {
+                            string hidenItemName = hidenItem.Key;
+                            if (!recommendations.Contains(hidenItemName)) {
+                                fn++;
+                            }                            
+                        }
+                        if (tp + fp == 0) {
+                            precision = 0.0;
+                        }
+                        else {
+                            precision = tp / (tp + fp);
+                        }
+                        if (tp + fn == 0) {
+                            recall = 0.0;
+                        }
+                        else {
+                            recall = tp / (tp + fn);
+                        }
+
+                        //ans[length]
+                    }
+                }
+                
+            }
+
+            return ans;
+            
         }
 
 
@@ -915,7 +977,7 @@ namespace RecommenderSystem
             }
         }
 
-        private double getWeight(string method, string activeUID, string otherUID)
+        public double getWeight(string method, string activeUID, string otherUID)
         {
             if (method.Equals("Pearson")) return getPearsonWeight(activeUID, otherUID);
             else if (method.Equals("Cosine")) return getCosineWeight(activeUID, otherUID);
@@ -1360,5 +1422,10 @@ namespace RecommenderSystem
                 }
             }
         }
+
+
+
+
+
     }
 }

@@ -79,7 +79,10 @@ namespace RecommenderSystem
             RecommenderSystem rs = new RecommenderSystem();
             rs.Load("MovieLens/u.data", 0.9);
             rs.TrainBaseModel(10);
-            List<string> lRecommendations = rs.Recommend("SVD", "6", 5);
+
+            //Dictionary<double, List<string>> env = rs.getUserEnvironment("Pearson", "6");
+
+            List<string> lRecommendations = rs.Recommend("NNSVD", "6", 5);
             //List<string> lRecommendations = rs.Recommend("Popularity", "32", 5);
             Console.Write("Recommended movies for user 6 ");
             foreach(string sMovie in lRecommendations)
