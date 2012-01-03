@@ -8,10 +8,12 @@ namespace RecommenderSystem
     class RecommenderAlgorithms
     {
         private RecommenderSystem rs;
+        private Dictionary<String, double> CPMemo;
 
         public RecommenderAlgorithms(RecommenderSystem rs)
         {
             this.rs = rs;
+            this.CPMemo = null;
         }
 
         public List<string> recommendPopularity(string sUserId, int cRecommendations, Dictionary<string, Item> itemsToUsers)
@@ -208,32 +210,39 @@ namespace RecommenderSystem
             List<string> itemsUserDidntRate = this.getItemsUserDidntRate(itemsUserHasSeen, itemsToUsers);
 
             List<String> relevantUsers = this.getUsersThatRateItems(itemsUserHasSeen, usersToItems);
+
+            //Setup memo
+            if (CPMemo == null)
+            {
+                CPMemo = new Dictionary<string, double>();
+                List<String> allItems = new List<String>(itemsToUsers.Keys);
+                foreach (String item1 in allItems)
+                    foreach (String item2 in allItems)
+                        CPMemo[item1 + "," + item2] = -1;
+            }
+
             Console.WriteLine("Relevant users: " + relevantUsers.Count + " All: " + usersToItems.Count);
             Console.WriteLine("Relevant items: " + itemsUserDidntRate.Count + " All: " + itemsToUsers.Count);
 
-            int c = 0;
             foreach (String globalItem in itemsUserDidntRate)
             {
-                if(c == 100) break;
-                c++;
-                if (itemsUserHasSeen.Contains(globalItem))
-                {
-                    continue;
-                }
                 double maxProbe = 0;
                 foreach (String item in itemsUserHasSeen)
                 {
+                    if(CPMemo[globalItem+","+item] != -1) {
+                        maxProbe = CPMemo[globalItem + "," + item];
+                        break;
+                    }
                     double countIJ = 0;
                     double countJ = 0;
                     foreach (String tmpUStr in relevantUsers)
                     {
                         User tmpU = usersToItems[tmpUStr];
                         Dictionary<String, Rating> tmpRatings = tmpU.getDictionary();
-                        List<string> itemsUser2HasSeen = new List<string>(tmpRatings.Keys);
-                        if (itemsUser2HasSeen.Contains(item))
+                        if (tmpRatings.ContainsKey(item))
                         {
                             countJ++;
-                            if (itemsUser2HasSeen.Contains(globalItem))
+                            if (tmpRatings.ContainsKey(globalItem))
                             {
                                 countIJ++;
                             }
@@ -243,7 +252,10 @@ namespace RecommenderSystem
 
                     double tmpProbe = (double)countIJ / (double)countJ;
                     if (tmpProbe > maxProbe)
+                    {
                         maxProbe = tmpProbe;
+                        CPMemo[globalItem + "," + item] = maxProbe;
+                    }
                 }
                 probabilities[globalItem] = maxProbe;
                 Console.WriteLine("prob for item " + globalItem + " is " + maxProbe);
