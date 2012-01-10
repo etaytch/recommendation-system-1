@@ -221,8 +221,8 @@ namespace RecommenderSystem
                         CPMemo[item1 + "," + item2] = -1;
             }
 
-            Console.WriteLine("Relevant users: " + relevantUsers.Count + " All: " + usersToItems.Count);
-            Console.WriteLine("Relevant items: " + itemsUserDidntRate.Count + " All: " + itemsToUsers.Count);
+            //Console.WriteLine("Relevant users: " + relevantUsers.Count + " All: " + usersToItems.Count);
+            //Console.WriteLine("Relevant items: " + itemsUserDidntRate.Count + " All: " + itemsToUsers.Count);
 
             foreach (String globalItem in itemsUserDidntRate)
             {
@@ -258,7 +258,7 @@ namespace RecommenderSystem
                     }
                 }
                 probabilities[globalItem] = maxProbe;
-                Console.WriteLine("prob for item " + globalItem + " is " + maxProbe);
+                //Console.WriteLine("prob for item " + globalItem + " is " + maxProbe);
             }
 
             foreach (KeyValuePair<string, Double> curProb in probabilities)
